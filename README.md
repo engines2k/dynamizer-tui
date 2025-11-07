@@ -10,7 +10,7 @@ At the moment, simple onset detection of transients seems like the best way to d
 A machine learning approach sounds like it would be more robust and possibly have a wider application outside of this narrow band of MIR, but I don't have the expertise in ML or the traning data neccessary to explore this option. Perhaps an idea for a second version, if I can get this first one off the ground.
 
 ### A speculative roadmap for this program:
-- Run a simple example script using Librosa.
+- x Run a simple example script using Librosa.
 - Read in musical data and print a message in the terminal upon transient events.
 - Distinguish between at least 2 different percussive sounds by timbre or pitch and print different messages for each.
 - Emit events to an interface that control some simple visualizer, like blinking dots.
