@@ -1,6 +1,7 @@
 import jack
 import numpy as np
 import time
+from itertools import chain
 
 my_samplerate = 44100
 my_d = 1 / my_samplerate
@@ -12,16 +13,25 @@ client.inports.register("right")
 
 @client.set_process_callback
 def process(frames):
+
     in_data = client.inports[0].get_array() # type: ignore
 
     fourier = np.fft.fft(in_data)
 
 
-    mag = np.abs(fourier.real[2])  # bin near ~88 Hz
-    if mag > 10:
-        print(f"{mag:10.3f}")
-    else:
-        print("")
+    res = ""
+
+    for i in chain(range(1, 6, 2),  range(7, len(fourier.real-50), 13)):
+        mag = np.abs(fourier.real[i])  # bin near ~88 Hz
+        if i < 5:
+            res += " "
+        if mag > 3/i*18:
+            res += f" {mag:1.0f} "
+        else:
+            res += " . "
+            
+
+    print(res)
 
 @client.set_shutdown_callback
 def shutdown(status, reason):
