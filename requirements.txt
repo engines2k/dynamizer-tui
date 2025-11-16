@@ -1,2 +1,3 @@
 numpy
 JACK-Client
+scipy
