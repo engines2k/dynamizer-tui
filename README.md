@@ -1,5 +1,5 @@
-# sound-to-controller
-Generate real-time control from sound input.
+# Dynamizer
+A real-time music feature detector.
 
 ## Goal / Info
 
