@@ -69,11 +69,13 @@ class Dynamizer():
         inports = self.audio_connector.inports
         frame = inports[0].get_array() # type: ignore
         self.inbuffer = np.concatenate((self.inbuffer, frame))
-        if(len(self.inbuffer) >= self.frame_size + self.hop_size):
+
+        # Process multiple frames if we've accumulated enough data
+        while len(self.inbuffer) >= self.frame_size + self.hop_size:
             frame = self.inbuffer[:self.frame_size]
             self.inbuffer = self.inbuffer[self.hop_size:]
             bins = self.analyze_freqs(frame)
-            self.primitive_analyzer(bins)
+            print(self.primitive_analyzer(bins))
 
     def analyze_freqs(self, x):
         x = x * self.hanning_window
