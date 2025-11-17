@@ -42,7 +42,7 @@ class Dynamizer():
     sample_rate = 44100
     sample_d = 1 / sample_rate
     frame_size = 4096
-    hop_size = 512
+    hop_size = 128
 
     def __init__(self):
         self.failures = 0
@@ -70,7 +70,6 @@ class Dynamizer():
         frame = inports[0].get_array() # type: ignore
         self.inbuffer = np.concatenate((self.inbuffer, frame))
 
-        # Process multiple frames if we've accumulated enough data
         while len(self.inbuffer) >= self.frame_size + self.hop_size:
             frame = self.inbuffer[:self.frame_size]
             self.inbuffer = self.inbuffer[self.hop_size:]
