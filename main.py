@@ -1,7 +1,7 @@
 import jack
 import numpy as np
 import time
-from scipy.signal import ZoomFFT, zoom_fft
+from scipy.signal import ZoomFFT
 from collections import deque
 
 # lol
@@ -9,6 +9,17 @@ LEFT_MONITOR = "Scarlett 2i2 3rd Gen Headphones / Line 1-2:monitor_FL"
 RIGHT_MONITOR = "Scarlett 2i2 3rd Gen Headphones / Line 1-2:monitor_FR"
 #LEFT_MONITOR = "Built-in Audio Analog Stereo:monitor_FL"
 #RIGHT_MONITOR = "Built-in Audio Analog Stereo:monitor_FR"
+
+def a_weighting(f):
+    numerator = 12194**2 * f**4
+    denominator = ((f**2 + 20.6**2) * np.sqrt((f**2 + 107.7**2) * (f**2 + 737.9**2)) * (f**2 + 12194**2))
+    weight_linear = numerator / denominator
+    weight_db = 20 * np.log10(weight_linear) - 20 * np.log10(a_weighting_1khz())
+    return weight_db
+
+def a_weighting_1khz():
+    f = 1000
+    return 12194**2 * f**4 / ((f**2 + 20.6**2) * np.sqrt((f**2 + 107.7**2) * (f**2 + 737.9**2)) * (f**2 + 12194**2))
 
 class AudioConnector():
     def __init__(self, process_callback) -> None:
@@ -42,7 +53,7 @@ class Dynamizer():
     sample_rate = 44100
     sample_d = 1 / sample_rate
     frame_size = 4096
-    hop_size = 128
+    hop_size = 256
 
     def __init__(self):
         self.failures = 0
@@ -52,9 +63,9 @@ class Dynamizer():
         self.audio_connector = AudioConnector(self.process_callback)
 
         self.hanning_window = np.hanning(self.frame_size)
-        self.low_fft = ZoomFFT(4096, [20, 100], 80, fs=self.sample_rate)
-        self.mid_fft = ZoomFFT(4096, [100, 1000], 100, fs=self.sample_rate)
-        self.high_fft = ZoomFFT(4096, [1000, 20000], 100, fs=self.sample_rate)
+        self.low_fft = ZoomFFT(self.frame_size, [20, 100], 80, fs=self.sample_rate)
+        self.mid_fft = ZoomFFT(self.frame_size, [100, 1000], 100, fs=self.sample_rate)
+        self.high_fft = ZoomFFT(self.frame_size, [1000, 20000], 100, fs=self.sample_rate)
 
     def activate(self):
         self.audio_connector.activate()
@@ -81,17 +92,25 @@ class Dynamizer():
         low_freqs = self.low_fft(x)
         mid_freqs = self.mid_fft(x)
         high_freqs = self.high_fft(x)
-        return np.concatenate((low_freqs, np.multiply(mid_freqs, 3), np.multiply(high_freqs, 70)))
+        combined = np.concatenate((low_freqs, mid_freqs, high_freqs))
+        magnitudes = np.abs(combined)
+        dbs = 20 * np.log10(magnitudes + 1e-10)  # Avoid log(0)
+        return dbs + self.apply_a_weighting()
+
+    def apply_a_weighting(self):
+        bin_freqs = self.get_bin_freqs()
+        return np.array([a_weighting(freq) for freq in bin_freqs])
+
+    def get_bin_freqs(self):
+        return np.concatenate((np.linspace(20, 80, 80), np.linspace(100, 1000, 100), np.linspace(1000, 20000, 100)))
 
     @staticmethod
     def primitive_analyzer(freqs):
         res = ""
         for i in range(0, len(freqs), 2):
-            mag = np.abs(freqs[i])
-            if i < 5:
-                res += " "
-            if mag > 50:
-                res += f"{mag//10:1.0f} "
+            strength = freqs[i]
+            if strength > 2:
+                res += f"{strength % 100:1.0f} "
             else:
                 res += " ."
         return res
@@ -125,8 +144,6 @@ class Dynamizer():
 dynamizer = Dynamizer()
 
 if __name__ == "__main__":
-
-        #print(np.fft.fftfreq(512, d=(1/44100)))
         print("Dynamizer starting. Press Ctrl+C to quit.")
         time.sleep(1)
         dynamizer.activate()
