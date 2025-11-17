@@ -1,7 +1,8 @@
 import jack
 import numpy as np
 import time
-from scipy.signal import ZoomFFT, zoom_fft
+from itertools import chain
+from scipy.signal import zoom_fft
 from collections import deque
 
 # lol
@@ -42,7 +43,7 @@ class Dynamizer():
     sample_rate = 44100
     sample_d = 1 / sample_rate
     frame_size = 4096
-    hop_size = 512
+    hop_size = 2048
 
     def __init__(self):
         self.failures = 0
@@ -50,11 +51,6 @@ class Dynamizer():
         self.last_2_frames = deque(maxlen=2)
         self.pause_processing = False
         self.audio_connector = AudioConnector(self.process_callback)
-
-        self.hanning_window = np.hanning(self.frame_size)
-        self.low_fft = ZoomFFT(4096, [20, 100], 80, fs=self.sample_rate)
-        self.mid_fft = ZoomFFT(4096, [100, 1000], 100, fs=self.sample_rate)
-        self.high_fft = ZoomFFT(4096, [1000, 20000], 100, fs=self.sample_rate)
 
     def activate(self):
         self.audio_connector.activate()
@@ -73,13 +69,13 @@ class Dynamizer():
             frame = self.inbuffer[:self.frame_size]
             self.inbuffer = self.inbuffer[self.hop_size:]
             bins = self.analyze_freqs(frame)
-            self.primitive_analyzer(bins)
+            print(self.primitive_analyzer(bins))
 
     def analyze_freqs(self, x):
-        x = x * self.hanning_window
-        low_freqs = self.low_fft(x)
-        mid_freqs = self.mid_fft(x)
-        high_freqs = self.high_fft(x)
+        windowed = x * np.hanning(len(x))
+        low_freqs = zoom_fft(windowed, [20, 100], 80, fs=self.sample_rate)
+        mid_freqs = zoom_fft(windowed, [100, 1000], 100, fs=self.sample_rate)
+        high_freqs = zoom_fft(windowed, [1000, 20000], 100, fs=self.sample_rate)
         return np.concatenate((low_freqs, np.multiply(mid_freqs, 3), np.multiply(high_freqs, 70)))
 
     @staticmethod
