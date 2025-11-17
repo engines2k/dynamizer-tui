@@ -6,8 +6,10 @@ from scipy.signal import zoom_fft
 from collections import deque
 
 # lol
-LEFT_MONITOR = "Scarlett 2i2 3rd Gen Headphones / Line 1-2:monitor_FL"
-RIGHT_MONITOR = "Scarlett 2i2 3rd Gen Headphones / Line 1-2:monitor_FR"
+# LEFT_MONITOR = "Scarlett 2i2 3rd Gen Headphones / Line 1-2:monitor_FL"
+# RIGHT_MONITOR = "Scarlett 2i2 3rd Gen Headphones / Line 1-2:monitor_FR"
+LEFT_MONITOR = "Built-in Audio Analog Stereo:monitor_FL"
+RIGHT_MONITOR = "Built-in Audio Analog Stereo:monitor_FR"
 
 class AudioConnector():
     def __init__(self, process_callback) -> None:
@@ -37,13 +39,15 @@ class AudioConnector():
 
 #TODO: Use bisect(?) to implement a method that returns the bin for a given frequency.
 class Dynamizer():
+    max_failures = 3
     sample_rate = 44100
     sample_d = 1 / sample_rate
     frame_size = 4096
     hop_size = 512
 
     def __init__(self):
-        self.in_buffer = np.ndarray(1)
+        self.failures = 0
+        self.inbuffer = np.ndarray(1)
         self.last_2_frames = deque(maxlen=2)
         self.pause_processing = False
         self.audio_connector = AudioConnector(self.process_callback)
@@ -56,19 +60,23 @@ class Dynamizer():
             self.process_frame(n_frames)
 
     def process_frame(self, n_frames):
+        if len(self.inbuffer) > self.sample_rate // 2:
+            self.recover()
         inports = self.audio_connector.inports
         frame = inports[0].get_array() # type: ignore
-        self.in_buffer = np.concatenate((self.in_buffer, frame))
-        if(len(self.in_buffer) >= self.frame_size + self.hop_size):
-            frame = self.in_buffer[:self.frame_size]
-            self.in_buffer = self.in_buffer[self.hop_size:]
+        self.inbuffer = np.concatenate((self.inbuffer, frame))
+        if(len(self.inbuffer) >= self.frame_size + self.hop_size):
+            frame = self.inbuffer[:self.frame_size]
+            self.inbuffer = self.inbuffer[self.hop_size:]
             bins = self.analyze_freqs(frame)
             print(self.primitive_analyzer(bins))
 
     def analyze_freqs(self, x):
         windowed = x * np.hanning(len(x))
-        low_freqs = zoom_fft(windowed, [35, 130], 95, fs=self.sample_rate)
-        return low_freqs
+        low_freqs = zoom_fft(windowed, [20, 100], 80, fs=self.sample_rate)
+        mid_freqs = zoom_fft(windowed, [100, 1000], 100, fs=self.sample_rate)
+        high_freqs = zoom_fft(windowed, [1000, 20000], 100, fs=self.sample_rate)
+        return np.concatenate((low_freqs, mid_freqs, high_freqs))
 
     @staticmethod
     def primitive_analyzer(freqs):
@@ -88,6 +96,20 @@ class Dynamizer():
         print("JACK shutdown:", status, reason)
 
     def look_for_transients(self):
+        pass
+
+    def recover(self):
+        if self.failures >= self.max_failures:
+            print("3 buffer processing fallbehinds. Using easier hop size.")
+            self.hop_size = 1024
+            self.failures = 0
+        else:
+            print("Half a second behind! Attempting recovery by clearing buffer.")
+            self.failures += 1
+        self.toggle_pause()
+        self.inbuffer = np.ndarray(1)
+        time.sleep(.5)
+        self.toggle_pause()
 
 
     def toggle_pause(self):
