@@ -6,10 +6,10 @@ from scipy.signal import zoom_fft
 from collections import deque
 
 # lol
-# LEFT_MONITOR = "Scarlett 2i2 3rd Gen Headphones / Line 1-2:monitor_FL"
-# RIGHT_MONITOR = "Scarlett 2i2 3rd Gen Headphones / Line 1-2:monitor_FR"
-LEFT_MONITOR = "Built-in Audio Analog Stereo:monitor_FL"
-RIGHT_MONITOR = "Built-in Audio Analog Stereo:monitor_FR"
+LEFT_MONITOR = "Scarlett 2i2 3rd Gen Headphones / Line 1-2:monitor_FL"
+RIGHT_MONITOR = "Scarlett 2i2 3rd Gen Headphones / Line 1-2:monitor_FR"
+#LEFT_MONITOR = "Built-in Audio Analog Stereo:monitor_FL"
+#RIGHT_MONITOR = "Built-in Audio Analog Stereo:monitor_FR"
 
 class AudioConnector():
     def __init__(self, process_callback) -> None:
@@ -76,7 +76,7 @@ class Dynamizer():
         low_freqs = zoom_fft(windowed, [20, 100], 80, fs=self.sample_rate)
         mid_freqs = zoom_fft(windowed, [100, 1000], 100, fs=self.sample_rate)
         high_freqs = zoom_fft(windowed, [1000, 20000], 100, fs=self.sample_rate)
-        return np.concatenate((low_freqs, mid_freqs, high_freqs))
+        return np.concatenate((low_freqs, np.multiply(mid_freqs, 3), np.multiply(high_freqs, 80)))
 
     @staticmethod
     def primitive_analyzer(freqs):
