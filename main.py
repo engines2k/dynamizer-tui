@@ -53,7 +53,7 @@ class Dynamizer():
     sample_rate = 44100
     sample_d = 1 / sample_rate
     frame_size = 4096
-    hop_size = 256
+    hop_size = 128
 
     def __init__(self):
         self.failures = 0
@@ -66,6 +66,7 @@ class Dynamizer():
         self.low_fft = ZoomFFT(self.frame_size, [20, 100], 80, fs=self.sample_rate)
         self.mid_fft = ZoomFFT(self.frame_size, [100, 1000], 100, fs=self.sample_rate)
         self.high_fft = ZoomFFT(self.frame_size, [1000, 20000], 100, fs=self.sample_rate)
+        self.weighting = self.calc_a_weighting()
 
     def activate(self):
         self.audio_connector.activate()
@@ -76,7 +77,8 @@ class Dynamizer():
 
     def process_frame(self, n_frames):
         if len(self.inbuffer) > self.sample_rate // 2:
-            self.recover()
+            self.attempt_recovery()
+
         inports = self.audio_connector.inports
         frame = inports[0].get_array() # type: ignore
         self.inbuffer = np.concatenate((self.inbuffer, frame))
@@ -85,7 +87,11 @@ class Dynamizer():
             frame = self.inbuffer[:self.frame_size]
             self.inbuffer = self.inbuffer[self.hop_size:]
             bins = self.analyze_freqs(frame)
-            print(self.primitive_analyzer(bins))
+            self.output_result(bins)
+
+    def output_result(self, bins):
+        self.primitive_bass_beat_detector(bins)
+        #self.primitive_analyzer(bins)
 
     def analyze_freqs(self, x):
         x = x * self.hanning_window
@@ -95,14 +101,30 @@ class Dynamizer():
         combined = np.concatenate((low_freqs, mid_freqs, high_freqs))
         magnitudes = np.abs(combined)
         dbs = 20 * np.log10(magnitudes + 1e-10)  # Avoid log(0)
-        return dbs + self.apply_a_weighting()
+        return dbs + self.weighting
 
-    def apply_a_weighting(self):
+    def calc_a_weighting(self):
         bin_freqs = self.get_bin_freqs()
         return np.array([a_weighting(freq) for freq in bin_freqs])
 
     def get_bin_freqs(self):
-        return np.concatenate((np.linspace(20, 80, 80), np.linspace(100, 1000, 100), np.linspace(1000, 20000, 100)))
+        all_bins = np.concatenate((np.linspace(20, 80, 80), np.linspace(100, 1000, 100), np.linspace(1000, 20000, 100)))
+        return all_bins
+
+    def primitive_bass_beat_detector(self, freqs):
+        threshold = -500
+        min_hz = 30
+        max_hz = 220
+        freq_bins = self.get_bin_freqs()
+        low_freqs = freqs[(freq_bins > min_hz) & (freq_bins < max_hz + 1)]
+        low_freqs_db = sum(low_freqs)
+        if low_freqs_db > threshold:
+            res = ""
+            for i in range(-500, int(low_freqs_db), 30):
+                res += "*"
+            print(res)
+        else:
+            print("")
 
     @staticmethod
     def primitive_analyzer(freqs):
@@ -113,7 +135,7 @@ class Dynamizer():
                 res += f"{strength % 100:1.0f} "
             else:
                 res += " ."
-        return res
+        print(res)
 
     @staticmethod
     def shutdown(status, reason):
@@ -122,7 +144,7 @@ class Dynamizer():
     def look_for_transients(self):
         pass
 
-    def recover(self):
+    def attempt_recovery(self):
         if self.failures >= self.max_failures:
             print("3 buffer processing fallbehinds. Using easier hop size.")
             self.hop_size = 1024
