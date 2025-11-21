@@ -85,8 +85,8 @@ class Dynamizer():
 
     def _output_result(self, freqs):
         bins = self._get_bin_freqs()
-        analyzer(bins, freqs)
-        #bass_beat(bins, freqs)
+        #analyzer(bins, freqs)
+        bass_beat(bins, freqs)
 
     def _get_bin_freqs(self):
         all_bins = np.concatenate((
