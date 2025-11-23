@@ -1,7 +1,36 @@
 # Dynamizer
-A real-time music feature detector.
+A real-time music feature detector and event server.
 
-## Goal / Info
+### Roadmap
+- x Terminal spectral analyzer from real-time signal
+- x Basic audio analysis and lookback buffer
+- c Reliable kick detection function
+- Reliable transient detection function for any frequency range
+- Overall loudness / energy function
+- Event bus for outputs, server feature
+- Implement all outputs listed below
+- Compatibility with WLED and other lighting software
+
+### Outputs
+Dynamizer will produce all the following outputs:
+- low_energy
+- mid_energy
+- high_energy
+- beat_kick
+- beat_tom
+  - OR beat_kick_hz
+- beat_snare
+- beat_hate
+- buzz
+- warmth
+- chaos
+- energy
+- beat_density
+- brightness
+- mood_state
+  - Computed based on the previous non-beat related outputs. For example, high energy + high beat_density + high chaos = aggressive
+
+### Goal / Info (kinda old)
 
 The goal for this project is to create a sound-based, general-purpose 'controller' that can broadcast events based on percussive (/ harmonic) music information in real-time. This could then be used to control a music visualizer or a lighting system. This controller would discriminiate between different types of percussive sounds (kick vs snare) as well as different instruments and sounds (hi-hat 1 vs. hi-hat 2). These would then be able to be mapped to different outputs, which could then perhaps control a splash of color or contrast in a music visualizer, or the color or brightness of an element in a lighting system. Ideally this controller will include outputs that change value based on the harmonic content of the song., or even from the overall current loudness or energy of the song. For example, an output will grow in strength, say from a value of 0 towards 1 based on the pitch / volume of the bass, or even from the overall current loudness or energy of the song.
 
@@ -15,21 +44,3 @@ A machine learning approach sounds like it would be more robust and possibly hav
     * Categorize events into type / channel based on frequency.
     * Push event into emit queue, or play immediately. This would result in a delay of the window size plus whatever compute time, ideally minimal.
     * Update longer-term data like bass notes, loudness, song dynamics etc. based on harmonic information
-
-### A speculative roadmap for this program:
-- o Run a simple example script using Librosa.
-- Read in musical data and print a message in the terminal upon transient events.
-- Distinguish between at least 2 different percussive sounds by timbre or pitch and print different messages for each.
-- Emit events to an interface that control some simple visualizer, like blinking dots.
-- Real-time processing from system audio, or perhaps a microphone.
-- Emit events triggered by harmonic content and song dynamics.
-
-## Research
-Read these and look further into the problem space to get a better idea of what exactly the hell I'm even doing.
-
-- https://en.wikipedia.org/wiki/Music_information_retrieval
-- https://librosa.org/doc/latest/tutorial.html
-- https://github.com/numpy/numpy
-
-## Notes
-- Librosa expects NumPy arrays filled with amplitude values, so real-time audio will need to be converted to this format in chunks so it can be processed. Right now, maybe process in chunks of 100ms or so as this is going to be mostly based off of transients. But this timing will raise a problem when analyzing harmonic or song dynamics information which happens over a much longer timeframe.

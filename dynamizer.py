@@ -1,11 +1,11 @@
 import time
 import math
 from weightings import a_weighting
-from visualizers import analyzer, bass_beat
+from visualizers import analyzer, bass_beat, NormalizedSignalVisualizer
 from audio_connector import AudioConnector
 from collections import deque
 import numpy as np
-from scipy.signal import ZoomFFT
+from scipy.signal import ZoomFFT, freqs
 from itertools import islice
 
 __all__ = ["dynamizer"]
@@ -15,7 +15,7 @@ class Lookback():
         self.sample_rate = sample_rate
         self.hop_size = hop_size
         self._buffer = deque(maxlen=self._ms_to_buffer_items(duration))
-    
+
     def push(self, item):
         self._buffer.appendleft(item)
 
@@ -44,7 +44,7 @@ class Dynamizer():
     sample_rate = 44100
     sample_d = 1 / sample_rate
     window_size = 4096
-    hop_size = 128
+    hop_size = 64
     lookback_duration_ms = 40
 
     def __init__(self):
@@ -94,7 +94,7 @@ class Dynamizer():
         bins = self._analyze_window(window)
         self._output_result(bins)
         self.lookback.push(bins)
-        self.look_for_transients()
+        self._calculate_features()
 
     def _analyze_window(self, x):
         x = self._apply_window_function(x)
@@ -131,54 +131,40 @@ class Dynamizer():
         ))
         return all_bins
 
-    #TODO:
-    def look_for_transients(self):
-        bins = self._get_bin_freqs()
-        min_hz = 60
-        max_hz = 240
-        # grab previous windows equal in duration to ~10ms (or some length derived from the frequency range)
-        lookback_duration_ms = 10
+    def _calculate_features(self):
+        lower_hz, upper_hz = 30, 200
+        lookback_duration_ms = 7
+        freq_bins = self._get_bin_freqs()
         try:
             frames = self.lookback.get_by_ms(lookback_duration_ms)
         except LookupError as e:
             print("Not enough frames in lookback buffer to look for transients, passing....")
             return
 
-        frames = [freqs[(bins > min_hz) & (bins < max_hz + 1)] for freqs in frames]
-        filtered_bins = bins[(bins > min_hz) & (bins < max_hz + 1)]
+        frames = [freqs[(freq_bins > lower_hz) & (freq_bins < upper_hz + 1)] for freqs in frames]
 
-        # Calculate amplitude slope
-        sums = np.sum(frames, axis=1)
-        sum_rise = sums[-1] - sums[0]
-        sum_run = len(sums)
-        amplitude_slope = sum_rise / sum_run
+        amp_slope = self._calc_amp_slope(frames)
+        amp_avg = self._calc_amp_avg(frames)
+        #TODO: Add signal amplification based on HFC slope
 
-        # Calculate dominant frequency for each frame
-        peak_freqs = [filtered_bins[i] for i in np.argmax(frames, axis=1)]
+        amp_signal = (amp_slope) - 26
+        if(amp_signal > 0):
+            output = (amp_avg)*2
+            print("*" * int(output))
+        else:
+            print('.')
 
-        # Calculate slope of dominant frequency
-        freq_rise = max(peak_freqs[-3:-1]) - max(peak_freqs[0:2])
-        freq_run = len(peak_freqs)
-        freq_slope = freq_rise / freq_run
+    def _calc_amp_avg(self, frames):
+        return np.average(np.average(frames, axis=1))
 
-        the_metric = ((np.average(sums)*.5) * (amplitude_slope*2) + (freq_slope * -1.5))
-        res = "*" * (int(the_metric) // 5000)
-        print(res if len(res) > 20 else ".")
-        return
+    def _calc_amp_slope(self, frames):
+        frame_amp_slopes = []
+        amplitudes = [np.sum(frame) for frame in frames]
+        for i in range(0, len(amplitudes)-1):
+            frame_amp_slopes.append((amplitudes[i] - amplitudes[i+1]) / 2)
+        average_slope = np.average(frame_amp_slopes)
 
-
-
-        # Visualize with proportional symbols
-        amp_symbols = "*" * max(0, int(current_amplitude / 5))
-        slope_symbols = "+" * max(0, int(amplitude_slope / 5))
-        freq_slope_symbols = "O" * max(0, int(freq_slope / 5 * -1))
-
-        # Detect transient based on amplitude threshold, amplitude slope, and frequency slope
-        #print(f"{amp_symbols}{slope_symbols}{freq_slope_symbols}")
-        #print(f"amp: {current_amplitude:0.1f} amp_slope: {amplitude_slope:0.1f} freq_slope: {freq_slope:0.1f}")
-
-        # if slope and frequency slope are greater than threshold, mark a transient to monitor until full decay / new transient in frequency
-
+        return average_slope
 
     def attempt_recovery(self):
         if self.failures >= self.max_failures:

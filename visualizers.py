@@ -1,4 +1,6 @@
-__all__ = ["analyzer", "bass_beat"]
+import math
+
+__all__ = ["analyzer", "bass_beat", "NormalizedSignalVisualizer"]
 
 def analyzer(bins, freqs):
     res = ""
@@ -24,3 +26,13 @@ def bass_beat(bins, freqs):
     else:
         print("")
 
+class NormalizedSignalVisualizer():
+    signal_max = 0.000001
+    max_chars = 10
+
+    def visualize(self, signal, char="*"):
+        self.signal_max = max(self.signal_max, signal)
+        normalized = signal / self.signal_max
+        result = math.ceil(normalized * self.max_chars)
+
+        return result * char
