@@ -2,6 +2,7 @@ import time
 import math
 from weightings import a_weighting
 from visualizers import analyzer, bass_beat, NormalizedSignalVisualizer
+from output import send_to_wled
 from audio_connector import AudioConnector
 from collections import deque
 import numpy as np
@@ -94,7 +95,8 @@ class Dynamizer():
         bins = self._analyze_window(window)
         self._output_result(bins)
         self.lookback.push(bins)
-        self._calculate_features()
+
+        #self._calculate_features()
 
     def _analyze_window(self, x):
         x = self._apply_window_function(x)
@@ -121,7 +123,10 @@ class Dynamizer():
     def _output_result(self, freqs):
         bins = self._get_bin_freqs()
         #analyzer(bins, freqs)
-        #bass_beat(bins, freqs)
+        thing = bass_beat(bins, freqs)
+        print(thing)
+        send_to_wled(thing)
+
 
     def _get_bin_freqs(self):
         all_bins = np.concatenate((
@@ -133,22 +138,27 @@ class Dynamizer():
 
     def _calculate_features(self):
         lower_hz, upper_hz = 30, 200
-        lookback_duration_ms = 7
+        lookback_duration_ms = 10
         freq_bins = self._get_bin_freqs()
+
         try:
             frames = self.lookback.get_by_ms(lookback_duration_ms)
         except LookupError as e:
             print("Not enough frames in lookback buffer to look for transients, passing....")
             return
 
-        frames = [freqs[(freq_bins > lower_hz) & (freq_bins < upper_hz + 1)] for freqs in frames]
+        low_frames = [freqs[(freq_bins > lower_hz) & (freq_bins < upper_hz + 1)] for freqs in frames]
+        high_frames = [freqs[(freq_bins > 60) & (freq_bins < 120 + 1)] for freqs in frames]
 
-        amp_slope = self._calc_amp_slope(frames)
-        amp_avg = self._calc_amp_avg(frames)
-        #TODO: Add signal amplification based on HFC slope
+        amp_slope = self._calc_amp_slope(low_frames)
+        amp_avg = self._calc_amp_avg(low_frames)
 
-        amp_signal = (amp_slope) - 26
-        if(amp_signal > 0):
+        flux = self._calc_spectral_flux(high_frames)
+        flux_avg = ((np.average(flux) / 10)+1) ** 2
+        print("*" * int((np.average(flux[-2:]) // 5 ) **2))
+        return
+
+        if(flux_avg > 10 and amp_slope > 20):
             output = (amp_avg)*2
             print("*" * int(output))
         else:
@@ -165,6 +175,12 @@ class Dynamizer():
         average_slope = np.average(frame_amp_slopes)
 
         return average_slope
+
+    def _calc_spectral_flux(self, frames):
+        diff = np.diff(frames, axis=0)
+        positive_diff = np.maximum(0, diff)
+        flux = np.sum(positive_diff, axis=1)
+        return flux
 
     def attempt_recovery(self):
         if self.failures >= self.max_failures:

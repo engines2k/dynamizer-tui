@@ -22,9 +22,9 @@ def bass_beat(bins, freqs):
         res = ""
         for i in range(0, int(low_freqs_db-100), 30):
             res += "*"
-        print(res)
+        return(res)
     else:
-        print("")
+        return("")
 
 class NormalizedSignalVisualizer():
     signal_max = 0.000001
