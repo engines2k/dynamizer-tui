@@ -49,8 +49,18 @@ def send_to_wled(char):
     data = bytearray()
     data.append(2)
 
-    for i in range(7):
-        buffer.appendleft([1, min(intensity, 255), min(intensity//2, 255)])
+    # Blend with previous value for smoother transitions
+    prev_value = buffer[0] if len(buffer) > 0 else [0, 0, 0]
+    target_value = [1, min(intensity, 255), min(intensity//2, 255)]
+
+    for i in range(5):
+        # Blend factor: 0.0 (mostly previous) to 1.0 (fully new)
+        blend = (i + 1) / 5.0
+        blended = [
+            int(prev_value[j] * (1 - blend) + target_value[j] * blend)
+            for j in range(3)
+        ]
+        buffer.appendleft(blended)
 
     frame = [buffer[i] for i in range(min(len(buffer), 50))]
     frame.reverse()
