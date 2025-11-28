@@ -1,7 +1,7 @@
 import time
 import math
 from weightings import a_weighting
-from visualizers import analyzer, bass_beat, NormalizedSignalVisualizer
+from visualizers import analyzer, bass_beat, high_stuff, NormalizedSignalVisualizer
 from output import send_to_wled
 from audio_connector import AudioConnector
 from collections import deque
@@ -123,7 +123,8 @@ class Dynamizer():
     def _output_result(self, freqs):
         bins = self._get_bin_freqs()
         #analyzer(bins, freqs)
-        thing = bass_beat(bins, freqs)
+        #thing = bass_beat(bins, freqs)
+        thing = high_stuff(bins, freqs)
         print(thing)
         send_to_wled(thing)
 

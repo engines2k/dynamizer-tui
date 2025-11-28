@@ -1,5 +1,7 @@
 import math
 
+from thresholds import AdaptiveThreshold
+
 __all__ = ["analyzer", "bass_beat", "NormalizedSignalVisualizer"]
 
 def analyzer(bins, freqs):
@@ -36,3 +38,26 @@ class NormalizedSignalVisualizer():
         result = math.ceil(normalized * self.max_chars)
 
         return result * char
+
+threshold = AdaptiveThreshold(decay_rate=100, raise_factor=.4)
+
+def high_stuff(bins, freqs):
+    min_hz = 5000
+    max_hz = 20000
+    high_freqs = freqs[(bins > min_hz) & (bins < max_hz + 1)]
+    high_db = sum(high_freqs)
+    threshold_crossed = threshold.track(high_db)
+
+    res = ""
+    for i in range(0, int(high_db), 10):
+        res += "*"
+
+    current = int(threshold.current)
+    if current < len(res):
+        res = res[:current//10] + "---" + res[current//10:]
+    if high_db > current:
+        return str(current) + " " + str(high_db) + res
+
+    else:
+        return("")
+
