@@ -1,8 +1,6 @@
-import math
-
 from thresholds import AdaptiveThreshold
 
-__all__ = ["analyzer", "bass_beat", "NormalizedSignalVisualizer"]
+__all__ = ["analyzer", "bass_beat"]
 
 def analyzer(bins, freqs):
     res = ""
@@ -22,27 +20,17 @@ def bass_beat(bins, freqs):
     low_freqs_db = sum(low_freqs)
     if low_freqs_db > threshold:
         res = ""
-        for i in range(0, int(low_freqs_db-100), 30):
+        for i in range(0, int(low_freqs_db-100), 20):
             res += "*"
         return(res)
     else:
         return("")
 
-class NormalizedSignalVisualizer():
-    signal_max = 0.000001
-    max_chars = 10
+# so far, decay rate of 2000 and raise factor .2 is decent for snare type transients
+threshold = AdaptiveThreshold(decay_rate=120000, raise_factor=.1, floor=7)
 
-    def visualize(self, signal, char="*"):
-        self.signal_max = max(self.signal_max, signal)
-        normalized = signal / self.signal_max
-        result = math.ceil(normalized * self.max_chars)
-
-        return result * char
-
-threshold = AdaptiveThreshold(decay_rate=100, raise_factor=.4)
-
-def high_stuff(bins, freqs):
-    min_hz = 5000
+def snare_beat(bins, freqs):
+    min_hz = 3000
     max_hz = 20000
     high_freqs = freqs[(bins > min_hz) & (bins < max_hz + 1)]
     high_db = sum(high_freqs)

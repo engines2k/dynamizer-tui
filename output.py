@@ -10,7 +10,8 @@ WLED_PORT = 21324
 
 # Example: Set 30 LEDs to solid blue
 num_leds = 100
-buffer = deque(maxlen=num_leds)
+buffer1 = deque(maxlen=num_leds)
+buffer2 = deque(maxlen=num_leds)
 
 data = bytearray()
 
@@ -34,27 +35,56 @@ max_send_rate_hz = 250
 min_send_interval = 1.0 / max_send_rate_hz
 last_send_time = 0
 
-def send_to_wled(char):
+def send_to_wled(char1, char2):
     global last_send_time
+    current_time = time.time()
+    data = bytearray()
+    data.append(2)
+
+    if current_time - last_send_time < min_send_interval:
+        return
+
+    buffer = buffer2
+    char = char2
 
     intensity = max(len(char) - 15, 0)
     intensity = intensity // 15
     intensity = intensity**2 + 1
 
-    current_time = time.time()
 
-    if current_time - last_send_time < min_send_interval:
-        return
+    prev_value = buffer[0] if len(buffer) > 0 else [0, 0, 0]
+    target_value = [min(intensity, 30), 1, 1]
 
-    data = bytearray()
-    data.append(2)
+    for i in range(6):
+        blend = (i + 1) / 6.0
+        blended = [
+            int(prev_value[j] * (1 - blend) + target_value[j] * blend)
+            for j in range(3)
+        ]
+        buffer.appendleft(blended)
 
-    # Blend with previous value for smoother transitions
+    frame = [buffer[i] for i in range(min(len(buffer), 50))]
+    frame.reverse()
+    frame.extend(reversed(frame))
+
+    flat = [ c for sublist in frame for c in sublist ]
+
+    data += bytes(flat)
+
+    #SECOND LOOP
+
+    buffer = buffer1
+    char = char1
+
+    intensity = max(len(char) - 15, 0)
+    intensity = intensity // 15
+    intensity = intensity**2 + 1
+
+
     prev_value = buffer[0] if len(buffer) > 0 else [0, 0, 0]
     target_value = [1, min(intensity, 255), min(intensity//2, 255)]
 
     for i in range(5):
-        # Blend factor: 0.0 (mostly previous) to 1.0 (fully new)
         blend = (i + 1) / 5.0
         blended = [
             int(prev_value[j] * (1 - blend) + target_value[j] * blend)
