@@ -35,7 +35,7 @@ max_send_rate_hz = 250
 min_send_interval = 1.0 / max_send_rate_hz
 last_send_time = 0
 
-def send_to_wled(char1, char2):
+def send(char1, char2):
     global last_send_time
     current_time = time.time()
     data = bytearray()
