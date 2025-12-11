@@ -67,7 +67,7 @@ class Dynamizer():
 
     def _init_outputs(self):
         self._outputs = SimpleNamespace(**{
-            #"wled": wled,
+            "wled": outputs.wled,
             "low_wave": outputs.SignalAnalyzer(),
             "high_wave": outputs.SignalAnalyzer(),
         })
@@ -135,7 +135,7 @@ class Dynamizer():
         bins = self._get_bin_freqs()
         bass = bass_beat(bins, freqs)
         snare = snare_beat(bins, freqs)
-        #outputs.wled.send(bass, snare)
+        outputs.wled.send(bass, snare)
         #self._outputs.low_wave.send(bass)
         self._outputs.high_wave.send(snare)
 
@@ -147,29 +147,6 @@ class Dynamizer():
             np.linspace(1000, 20000, 100)
         ))
         return all_bins
-
-    def _calculate_features(self):
-        lower_hz, upper_hz = 30, 200
-        lookback_duration_ms = 10
-        freq_bins = self._get_bin_freqs()
-
-        try:
-            frames = self._lookback.get_by_ms(lookback_duration_ms)
-        except LookupError as e:
-            print("Not enough frames in lookback buffer to look for transients, passing....")
-            return
-
-        low_frames = [freqs[(freq_bins > lower_hz) & (freq_bins < upper_hz + 1)] for freqs in frames]
-        high_frames = [freqs[(freq_bins > 60) & (freq_bins < 120 + 1)] for freqs in frames]
-
-        amp_slope = self._calc_amp_slope(low_frames)
-        amp_avg = self._calc_amp_avg(low_frames)
-
-        flux = self._calc_spectral_flux(high_frames)
-        flux_avg = ((np.average(flux) / 10)+1) ** 2
-        print("*" * int((np.average(flux[-2:]) // 5 ) **2))
-        return
-
 
     def _calc_amp_avg(self, frames):
         return np.average(np.average(frames, axis=1))

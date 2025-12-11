@@ -35,7 +35,7 @@ max_send_rate_hz = 250
 min_send_interval = 1.0 / max_send_rate_hz
 last_send_time = 0
 
-def send(char1, char2):
+def send(signal1, signal2):
     global last_send_time
     current_time = time.time()
     data = bytearray()
@@ -45,10 +45,10 @@ def send(char1, char2):
         return
 
     buffer = buffer2
-    char = char2
+    signal = signal2
 
-    intensity = max(len(char) - 15, 0)
-    intensity = intensity // 15
+    intensity = max(signal - 15, 0)
+    intensity = intensity // 125
     intensity = intensity**2 + 1
 
 
@@ -74,10 +74,10 @@ def send(char1, char2):
     #SECOND LOOP
 
     buffer = buffer1
-    char = char1
+    signal = signal1
 
-    intensity = max(len(char) - 15, 0)
-    intensity = intensity // 15
+    intensity = max(signal - 15, 0)
+    intensity = intensity // 400
     intensity = intensity**2 + 1
 
 

@@ -1,8 +1,8 @@
-#from . import wled
+from . import wled
 from .terminalwave import SignalAnalyzer, FrequencyAnalyzer
 
 __all__ = [
-   #"wled",
+   "wled",
    "SignalAnalyzer",
    "FrequencyAnalyzer"
 ]
