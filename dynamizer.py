@@ -67,7 +67,7 @@ class Dynamizer():
 
     def _init_outputs(self):
         self._outputs = SimpleNamespace(**{
-            "wled": outputs.wled,
+            "wled": outputs.wled.WLEDClient(),
             "low_wave": outputs.SignalAnalyzer(),
             "high_wave": outputs.SignalAnalyzer(),
         })
@@ -135,7 +135,7 @@ class Dynamizer():
         bins = self._get_bin_freqs()
         bass = bass_beat(bins, freqs)
         snare = snare_beat(bins, freqs)
-        outputs.wled.send(bass, snare)
+        self._outputs.wled.send(bass, snare)
         #self._outputs.low_wave.send(bass)
         self._outputs.high_wave.send(snare)
 
