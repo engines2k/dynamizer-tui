@@ -1,107 +1,131 @@
+# Left off at refactoring into classes
+#TODO: Add back in the handling of the 2 signals we currently have, get new refactored code running like it did before. Then go through and give everything a decent name
+
 import socket
-import random
 import time
 from collections import deque
 
-# Your WLED mDNS name or IP
 WLED_HOST = "wled-bfn.local"
 WLED_PORT = 21324
+LISTEN_TIMEOUT_SECONDS = 2
+
+class LightBuffer:
+    def __init__(self, num_leds, blend_amount=6):
+        self.buffer = deque(maxlen=num_leds)
+        self.blend_amount = blend_amount
+
+    def handle_signal(self, signal):
+        intensity = self.calc_intensity(signal)
+        blended_intensities = self.blend_signal(intensity)
+        self.buffer.appendleft(blended_intensities)
+
+    def blend_signal(self, intensity):
+        result = []
+        prev_value = self.buffer[0] if len(self.buffer) > 0 else [0, 0, 0]
+        target_value = [min(intensity, 30), 1, 1]
+        for i in range(self.blend_amount):
+            blend = (i + 1) / self.blend_amount
+            blended = [
+                int(prev_value[j] * (1 - blend) + target_value[j] * blend)
+                for j in range(3)
+            ]
+            result.append(blended)
+        return result
+
+    def build_frame(self):
+        frame = [self.buffer[i] for i in range(min(len(self.buffer), 50))]
+        frame.reverse()
+        frame.extend(reversed(frame))
+        flattened = [ c for sublist in frame for c in sublist ]
+        return flattened 
+
+    @staticmethod
+    def calc_intensity(signal):
+        return (signal//125)**2 + 1
+
+light1 = LightBuffer(100)
+buffer2 = LightBuffer(100)
+
+class WLED:
+    def __init__(self):
+        self.host = WLED_HOST
+        self.port = WLED_PORT
+        self.num_leds = 100
+        
+        self._socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self._socket.setblocking(False)
+        
+        self.max_send_rate_hz = 250
+        self.min_send_interval = 1.0 / self.max_send_rate_hz
+        self.last_send_time = 0
+
+        self.resolve_address()
+
+    def resolve_address(self):
+        try:
+            self.resolved_address = (socket.gethostbyname(WLED_HOST), WLED_PORT)
+        except socket.gaierror:
+            self.resolved_address = (WLED_HOST, WLED_PORT)
 
 
-# Example: Set 30 LEDs to solid blue
-num_leds = 100
-buffer1 = deque(maxlen=num_leds)
-buffer2 = deque(maxlen=num_leds)
+    def send(self, light, signal):
+        if not self.ready_to_send:
+            return
 
-data = bytearray()
+        data = bytearray()
+        data.append(LISTEN_TIMEOUT_SECONDS)
 
-data.append(2)
+        light.handle_signal(signal)
+        frame = light.build_frame()
 
-for i in range(num_leds):
-    data += bytes((10, 90, 255))  # R,G,B
+        data += bytes(frame)
 
-sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-sock.setblocking(False)
+        #SECOND LOOP
 
-try:
-    resolved_address = (socket.gethostbyname(WLED_HOST), WLED_PORT)
-except socket.gaierror:
-    resolved_address = (WLED_HOST, WLED_PORT)
+        #buffer = buffer1
+        #signal = signal1
 
-sock.sendto(data, resolved_address)
-print("Sent!")
-
-max_send_rate_hz = 250
-min_send_interval = 1.0 / max_send_rate_hz
-last_send_time = 0
-
-def send(signal1, signal2):
-    global last_send_time
-    current_time = time.time()
-    data = bytearray()
-    data.append(2)
-
-    if current_time - last_send_time < min_send_interval:
-        return
-
-    buffer = buffer2
-    signal = signal2
-
-    intensity = max(signal - 15, 0)
-    intensity = intensity // 125
-    intensity = intensity**2 + 1
+        #intensity = max(signal - 15, 0)
+        #intensity = intensity // 400
+        #intensity = intensity**2 + 1
 
 
-    prev_value = buffer[0] if len(buffer) > 0 else [0, 0, 0]
-    target_value = [min(intensity, 30), 1, 1]
+        #prev_value = buffer[0] if len(buffer) > 0 else [0, 0, 0]
+        #target_value = [1, min(intensity, 255), min(intensity//2, 255)]
 
-    for i in range(6):
-        blend = (i + 1) / 6.0
-        blended = [
-            int(prev_value[j] * (1 - blend) + target_value[j] * blend)
-            for j in range(3)
-        ]
-        buffer.appendleft(blended)
+        #for i in range(5):
+            #blend = (i + 1) / 5.0
+            #blended = [
+                #int(prev_value[j] * (1 - blend) + target_value[j] * blend)
+                #for j in range(3)
+            #]
+            #buffer.appendleft(blended)
 
-    frame = [buffer[i] for i in range(min(len(buffer), 50))]
-    frame.reverse()
-    frame.extend(reversed(frame))
+        #frame = [buffer[i] for i in range(min(len(buffer), 50))]
+        #frame.reverse()
+        #frame.extend(reversed(frame))
 
-    flat = [ c for sublist in frame for c in sublist ]
+        #flat = [ c for sublist in frame for c in sublist ]
 
-    data += bytes(flat)
+        #data += bytes(flat)
 
-    #SECOND LOOP
+        try:
+            self._socket.sendto(data, self.resolved_address)
+            self.last_send_time = time.time()
+        except BlockingIOError:
+            pass
 
-    buffer = buffer1
-    signal = signal1
+    @property
+    def ready_to_send(self):
+        current_time = time.time()
+        if current_time - self.last_send_time < self.min_send_interval:
+            return False
+        return True
 
-    intensity = max(signal - 15, 0)
-    intensity = intensity // 400
-    intensity = intensity**2 + 1
+#buffer1 = deque(maxlen=num_leds)
+#buffer2 = deque(maxlen=num_leds)
+
+#sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+#sock.setblocking(False)
 
 
-    prev_value = buffer[0] if len(buffer) > 0 else [0, 0, 0]
-    target_value = [1, min(intensity, 255), min(intensity//2, 255)]
-
-    for i in range(5):
-        blend = (i + 1) / 5.0
-        blended = [
-            int(prev_value[j] * (1 - blend) + target_value[j] * blend)
-            for j in range(3)
-        ]
-        buffer.appendleft(blended)
-
-    frame = [buffer[i] for i in range(min(len(buffer), 50))]
-    frame.reverse()
-    frame.extend(reversed(frame))
-
-    flat = [ c for sublist in frame for c in sublist ]
-
-    data += bytes(flat)
-
-    try:
-        sock.sendto(data, resolved_address)
-        last_send_time = current_time
-    except BlockingIOError:
-        pass
