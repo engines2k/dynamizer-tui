@@ -1,45 +1,14 @@
 import time
-import math
+import outputs
 from weightings import a_weighting
 from visualizers import  bass_beat, snare_beat
-import outputs
+from lookback import Lookback
 from types import SimpleNamespace
 from audio_connector import AudioConnector
-from collections import deque
 import numpy as np
 from scipy.signal import ZoomFFT, freqs
-from itertools import islice
 
 __all__ = ["dynamizer"]
-
-class Lookback():
-    def __init__(self, duration, sample_rate, hop_size):
-        self.sample_rate = sample_rate
-        self.hop_size = hop_size
-        self._buffer = deque(maxlen=self._ms_to_buffer_items(duration))
-
-    def push(self, item):
-        self._buffer.appendleft(item)
-
-    def get_by_ms(self, ms):
-        num_items = self._ms_to_buffer_items(ms)
-        if num_items > len(self._buffer):
-            raise LookupError(f"Lookback duration of {ms} out of range")
-        return np.array([item for item in islice(self._buffer, 0, num_items)])
-
-    def _ms_to_buffer_items(self, ms):
-        target_n_samples = self.sample_rate * ( ms / 1000 )
-        target_frames = math.ceil(target_n_samples / self.hop_size)
-        return target_frames
-
-    def __getitem__(self, index):
-        return self._buffer[index]
-
-    def __len__(self):
-        return self._buffer
-
-    def __repr__(self):
-        return f"Lookback(sample_rate={self.sample_rate} hop_size={self.hop_size} _buffer={self._buffer.__str__})"
 
 class Dynamizer():
     max_failures = 3
@@ -138,7 +107,6 @@ class Dynamizer():
         self._outputs.wled.send(bass, snare)
         #self._outputs.low_wave.send(bass)
         self._outputs.high_wave.send(snare)
-
 
     def _get_bin_freqs(self):
         all_bins = np.concatenate((

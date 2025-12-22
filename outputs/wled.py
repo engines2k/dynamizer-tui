@@ -1,6 +1,4 @@
-# Left off at refactoring into classes
-#TODO: Add back in the handling of the 2 signals we currently have, get new refactored code running like it did before. Then go through and give everything a decent name
-
+#TODO: Go through and give everything a decent name
 import socket
 import time
 from collections import deque
@@ -9,10 +7,24 @@ WLED_HOST = "wled-bfn.local"
 WLED_PORT = 21324
 LISTEN_TIMEOUT_SECONDS = 2
 
+LIGHT_SETTINGS_KICK = {
+    'multiplier': .3,
+    'adjust': 0,
+    'color': (1, 255, 255), #BRG
+    'blend_amount': 6
+}
+
+LIGHT_SETTINGS_SNARE = {
+    'multiplier': 1.5,
+    'adjust': 0,
+    'color': (100, 30, 15), #BRG
+    'blend_amount': 6
+}
+
 class LightBuffer:
-    def __init__(self, num_leds, blend_amount=6):
+    def __init__(self, num_leds, settings):
         self.buffer = deque(maxlen=num_leds)
-        self.blend_amount = blend_amount
+        self.settings = settings
 
     def _handle_signal(self, signal):
         intensity = self.calc_intensity(signal)
@@ -21,10 +33,10 @@ class LightBuffer:
 
     def _blend_signal(self, intensity):
         result = []
-        prev_value = self.buffer[0] if len(self.buffer) > 0 else [0, 0, 0]
-        target_value = [min(intensity, 30), 1, 1]
-        for i in range(self.blend_amount):
-            blend = (i + 1) / self.blend_amount
+        prev_value = self.buffer[0] if len(self.buffer) > 0 else [1, 1, 1]
+        target_value = [ min(intensity, channel) for channel in self.settings['color'] ]
+        for i in range(self.settings['blend_amount']):
+            blend = (i + 1) / self.settings['blend_amount']
             blended = [
                 int(prev_value[j] * (1 - blend) + target_value[j] * blend)
                 for j in range(3)
@@ -33,24 +45,38 @@ class LightBuffer:
         return result
 
     def _build_frame(self):
-        frame = [self.buffer[i] for i in range(min(len(self.buffer), 50))]
+        buffer_list = list(self.buffer)
+        num_items = min(len(buffer_list), 50)
+
+        frame = buffer_list[:num_items]
+
+        if num_items < 50:
+            frame.extend([[0, 0, 0]] * (50 - num_items))
+
         frame.reverse()
         frame.extend(reversed(frame))
+
         flattened: list[int] = [ c for sublist in frame for c in sublist ]
         return flattened 
 
-    @staticmethod
-    def calc_intensity(signal):
-        return (signal//125)**2 + 1
+    def calc_intensity(self, signal):
+        # Apply threshold/adjustment to remove noise
+        adjusted_signal = max(signal + self.settings['adjust'], 0)
 
-light1 = LightBuffer(100)
-buffer2 = LightBuffer(100)
+        # Scale: divide first (larger divisor = weaker signal), then square for non-linear response
+        # multiplier works inversely here: smaller multiplier = divide by larger number = weaker
+        divisor = int(125 / self.settings['multiplier']) if self.settings['multiplier'] > 0 else 125
+        scaled = adjusted_signal // divisor
+        intensity = scaled ** 2 + 1
+
+        return intensity
+
 
 class WLEDClient:
     def __init__(self):
         self.host = WLED_HOST
         self.port = WLED_PORT
-        self._lights: list[LightBuffer] = [LightBuffer(100), LightBuffer(100)]
+        self._lights: list[LightBuffer] = [LightBuffer(num_leds=100, settings=LIGHT_SETTINGS_KICK), LightBuffer(num_leds=100, settings=LIGHT_SETTINGS_SNARE)]
         
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self._socket.setblocking(False)
