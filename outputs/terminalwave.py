@@ -2,7 +2,7 @@ from thresholds import AdaptiveThreshold
 
 class SignalAnalyzer():
 
-    def __init__(self, output_width=50):
+    def __init__(self, output_width=100):
         self._threshold = AdaptiveThreshold(decay_rate=1)
         self._output_width = output_width
 

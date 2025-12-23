@@ -4,12 +4,15 @@ A real-time music feature detector and event server.
 ### Roadmap
 - x Terminal spectral analyzer from real-time signal
 - x Basic audio analysis and lookback buffer
-- c Reliable kick detection function
+- x Reliable kick detection function
 - Reliable transient detection function for any frequency range
 - Overall loudness / energy function
 - Event bus for outputs, server feature
 - Implement all outputs listed below
 - Compatibility with WLED and other lighting software
+
+### Todo
+- SignalAnalyzer: Add the option to 
 
 ### Outputs
 Dynamizer will produce all the following outputs:

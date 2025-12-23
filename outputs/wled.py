@@ -10,8 +10,8 @@ LISTEN_TIMEOUT_SECONDS = 2
 LIGHT_SETTINGS_KICK = {
     'multiplier': .3,
     'adjust': 0,
-    'color': (1, 255, 255), #BRG
-    'blend_amount': 6
+    'color': (5, 255, 255), #BRG
+    'blend_amount': 5
 }
 
 LIGHT_SETTINGS_SNARE = {

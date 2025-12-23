@@ -1,4 +1,5 @@
 import time
+from analyzers import BeatHarmonySeparator
 import outputs
 from weightings import a_weighting
 from visualizers import  bass_beat, snare_beat
@@ -23,27 +24,38 @@ class Dynamizer():
         self._inbuffer = np.ndarray(1)
         self._pause_processing = False
         self._audio_connector = AudioConnector(self.process_callback)
-        self._lookback = Lookback(self.lookback_duration_ms, self.sample_rate, self.hop_size)
+        self.signal_lookback = Lookback(self.lookback_duration_ms, self.sample_rate, self.hop_size)
 
         self._signal_windower = np.hanning(self.window_size)
 
         self.low_zoom_fft = ZoomFFT(self.window_size, [20, 100], 80, fs=self.sample_rate)
         self.mid_zoom_fft = ZoomFFT(self.window_size, [100, 1000], 100, fs=self.sample_rate)
         self.high_zoom_fft = ZoomFFT(self.window_size, [1000, 20000], 100, fs=self.sample_rate)
+        # Change this later to be dynamic along with the FFT strategy.
+        self._freq_bins = np.concatenate((
+            np.linspace(20, 80, 80),
+            np.linspace(100, 1000, 100),
+            np.linspace(1000, 20000, 100)
+        ))
         self.weightings = self.calc_a_weighting()
 
         self._init_outputs()
+        self._init_analyzers()
 
     def _init_outputs(self):
         self._outputs = SimpleNamespace(**{
             "wled": outputs.wled.WLEDClient(),
-            "low_wave": outputs.SignalAnalyzer(),
-            "high_wave": outputs.SignalAnalyzer(),
+            "terminalwave": outputs.SignalAnalyzer(),
+        })
+
+    def _init_analyzers(self):
+        self._analyzers = SimpleNamespace(**{
+        'kick_beat_harmony': BeatHarmonySeparator(self.signal_lookback),
+        'snare_beat_harmony': BeatHarmonySeparator(self.signal_lookback),
         })
 
     def calc_a_weighting(self):
-        bin_freqs = self._get_bin_freqs()
-        return np.array([a_weighting(freq) for freq in bin_freqs])
+        return np.array([a_weighting(freq) for freq in self._freq_bins])
 
     def activate(self) -> None:
         self._audio_connector.activate()
@@ -72,17 +84,25 @@ class Dynamizer():
     def _process_buffer_window(self):
         window = self._inbuffer[:self.window_size]
         self._inbuffer = self._inbuffer[self.hop_size:]
-        bins = self._analyze_window(window)
-        self._output_result(bins)
-        self._lookback.push(bins)
+        freqs = self._analyze_signal_window(window)
+        self._output_result(freqs)
+        self.signal_lookback.push(freqs)
 
         #self._calculate_features()
 
-    def _analyze_window(self, x):
+    def _analyze_signal_window(self, x):
         x = self._apply_window_function(x)
         freqs = self._apply_fft_strategy(x)
         freqs = self._transform_freqs(freqs)
+        features = self._analyze_freqs_features(freqs)
         return freqs
+
+    def _analyze_freqs_features(self, freqs):
+        # Separate transient from harmony (bass)
+        # Separate transient from harmony (snare)
+
+        # return result as dict
+        pass
 
     def _apply_window_function(self, x):
         return x * self._signal_windower
@@ -97,24 +117,16 @@ class Dynamizer():
         freqs = np.abs(freqs**2)
         freqs = 20 * np.log10(freqs + 1e-10)  # Avoid log(0)
         freqs += self.weightings
-        freqs = np.clip(freqs, 0, None)
+        freqs = np.clip(freqs, a_min=0, a_max=None)
         return freqs
 
     def _output_result(self, freqs):
-        bins = self._get_bin_freqs()
+        bins = self._freq_bins
         bass = bass_beat(bins, freqs)
         snare = snare_beat(bins, freqs)
         self._outputs.wled.send(bass, snare)
-        #self._outputs.low_wave.send(bass)
-        self._outputs.high_wave.send(snare)
-
-    def _get_bin_freqs(self):
-        all_bins = np.concatenate((
-            np.linspace(20, 80, 80),
-            np.linspace(100, 1000, 100),
-            np.linspace(1000, 20000, 100)
-        ))
-        return all_bins
+        self._analyzers.kick_beat_harmony.analyze(bass)
+        #self._outputs.terminalwave.send(snare)
 
     def _calc_amp_avg(self, frames):
         return np.average(np.average(frames, axis=1))
