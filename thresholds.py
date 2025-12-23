@@ -10,7 +10,7 @@ class AdaptiveThreshold():
         self._raise_factor = raise_factor
         self._floor = floor
         self._debounce_timer = 0
-        self._debounce_period_ms = 20
+        self._debounce_period_ms = 15
 
     def track(self, signal):
         self._decay_threshold()

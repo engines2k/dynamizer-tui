@@ -49,10 +49,10 @@ class Dynamizer():
         })
 
     def _init_analyzers(self):
-        self._analyzers = SimpleNamespace(**{
-        'kick_beat_harmony': BeatHarmonySeparator(self.signal_lookback),
-        'snare_beat_harmony': BeatHarmonySeparator(self.signal_lookback),
-        })
+        self._analyzers = {
+            'kick_beat_harmony': BeatHarmonySeparator(self.signal_lookback, min_freq=30, max_freq=220, label='kick'),
+            'snare_beat_harmony': BeatHarmonySeparator(self.signal_lookback, min_freq=3000, label='snare'),
+        }
 
     def calc_a_weighting(self):
         return np.array([a_weighting(freq) for freq in self._freq_bins])
@@ -85,6 +85,8 @@ class Dynamizer():
         window = self._inbuffer[:self.window_size]
         self._inbuffer = self._inbuffer[self.hop_size:]
         freqs = self._analyze_signal_window(window)
+        features = self._analyze_freqs_features(freqs)
+        print(features)
         self._output_result(freqs)
         self.signal_lookback.push(freqs)
 
@@ -94,15 +96,18 @@ class Dynamizer():
         x = self._apply_window_function(x)
         freqs = self._apply_fft_strategy(x)
         freqs = self._transform_freqs(freqs)
-        features = self._analyze_freqs_features(freqs)
         return freqs
 
     def _analyze_freqs_features(self, freqs):
         # Separate transient from harmony (bass)
         # Separate transient from harmony (snare)
-
-        # return result as dict
-        pass
+        features = {}
+        for analyzer in self._analyzers:
+            features = {
+                **features,
+                **self._analyzers[analyzer].analyze(self._freq_bins, freqs)
+            }
+        return features
 
     def _apply_window_function(self, x):
         return x * self._signal_windower
@@ -125,7 +130,6 @@ class Dynamizer():
         bass = bass_beat(bins, freqs)
         snare = snare_beat(bins, freqs)
         self._outputs.wled.send(bass, snare)
-        self._analyzers.kick_beat_harmony.analyze(bass)
         #self._outputs.terminalwave.send(snare)
 
     def _calc_amp_avg(self, frames):
