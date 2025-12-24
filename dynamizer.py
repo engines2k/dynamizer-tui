@@ -87,7 +87,7 @@ class Dynamizer():
         freqs = self._analyze_signal_window(window)
         features = self._analyze_freqs_features(freqs)
         print(features)
-        self._output_result(freqs)
+        self._output_result(freqs, features)
         self.signal_lookback.push(freqs)
 
         #self._calculate_features()
@@ -125,11 +125,12 @@ class Dynamizer():
         freqs = np.clip(freqs, a_min=0, a_max=None)
         return freqs
 
-    def _output_result(self, freqs):
+    def _output_result(self, freqs, features):
         bins = self._freq_bins
         bass = bass_beat(bins, freqs)
         snare = snare_beat(bins, freqs)
-        self._outputs.wled.send(bass, snare)
+        kick = features['kick_beat']
+        self._outputs.wled.send(bass, snare, kick)
         #self._outputs.terminalwave.send(snare)
 
     def _calc_amp_avg(self, frames):

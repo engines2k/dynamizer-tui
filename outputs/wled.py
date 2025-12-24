@@ -21,6 +21,13 @@ LIGHT_SETTINGS_SNARE = {
     'blend_amount': 6
 }
 
+LIGHT_SETTINGS_KICK_SIGNAL = {
+    'multiplier': .3,
+    'adjust': 0,
+    'color': (14, 15, 255), #BRG - Red (255, 10, 10 in RGB)
+    'blend_amount': 2
+}
+
 class LightBuffer:
     def __init__(self, num_leds, settings):
         self.buffer = deque(maxlen=num_leds)
@@ -76,7 +83,11 @@ class WLEDClient:
     def __init__(self):
         self.host = WLED_HOST
         self.port = WLED_PORT
-        self._lights: list[LightBuffer] = [LightBuffer(num_leds=100, settings=LIGHT_SETTINGS_KICK), LightBuffer(num_leds=100, settings=LIGHT_SETTINGS_SNARE)]
+        self._lights: list[LightBuffer] = [
+            LightBuffer(num_leds=100, settings=LIGHT_SETTINGS_KICK),
+            LightBuffer(num_leds=100, settings=LIGHT_SETTINGS_SNARE),
+            LightBuffer(num_leds=100, settings=LIGHT_SETTINGS_KICK_SIGNAL)
+        ]
         
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self._socket.setblocking(False)
@@ -93,21 +104,56 @@ class WLEDClient:
         except socket.gaierror:
             self._resolved_address = (WLED_HOST, WLED_PORT)
 
-    def _build_payload(self, signal1, signal2):
+    def _build_payload(self, signal1, signal2, kick_signal):
         payload = bytearray()
         payload.append(LISTEN_TIMEOUT_SECONDS)
 
-        for light, signal in zip(self._lights, (signal1, signal2)):
-            light._handle_signal(signal)
-            payload += bytes(light._build_frame())
+        # Always process signal1 in its buffer
+        self._lights[0]._handle_signal(signal1)
+
+        # Build the first output frame
+        if kick_signal > 0:
+            # When kick is active, also process kick_signal and blend the two buffers
+            self._lights[2]._handle_signal(kick_signal)
+
+            # Get frames from both buffers
+            kick_buffer_list = list(self._lights[0].buffer)
+            kick_signal_buffer_list = list(self._lights[2].buffer)
+
+            # Blend the two buffers together
+            blended_buffer = []
+            for i in range(min(len(kick_buffer_list), len(kick_signal_buffer_list))):
+                # Take max of each color channel for additive blending
+                blended_pixel = [
+                    min(255, kick_buffer_list[i][j] + kick_signal_buffer_list[i][j])
+                    for j in range(3)
+                ]
+                blended_buffer.append(blended_pixel)
+
+            # Pad if needed and build frame
+            num_items = min(len(blended_buffer), 50)
+            frame = blended_buffer[:num_items]
+            if num_items < 50:
+                frame.extend([[0, 0, 0]] * (50 - num_items))
+            frame.reverse()
+            frame.extend(reversed(frame))
+            flattened = [c for sublist in frame for c in sublist]
+            payload += bytes(flattened)
+        else:
+            # No kick signal, just use normal kick buffer
+            payload += bytes(self._lights[0]._build_frame())
+
+        # Second output always uses signal2 with snare buffer
+        self._lights[1]._handle_signal(signal2)
+        payload += bytes(self._lights[1]._build_frame())
 
         return payload
 
-    def send(self, signal1, signal2):
+    def send(self, signal1, signal2, kick_signal):
         if not self._ready_to_send:
             return
 
-        payload = self._build_payload(signal1, signal2)
+        payload = self._build_payload(signal1, signal2, kick_signal*500)
 
         try:
             self._socket.sendto(payload, self._resolved_address)
