@@ -85,7 +85,7 @@ class WLEDClient:
         if not self._ready_to_send:
             return
 
-        payload = self._build_payload(signal1, signal2, kick_signal**2)
+        payload = self._build_payload(signal1, signal2, kick_signal**2//10)
 
         try:
             self._socket.sendto(payload, self._resolved_address)

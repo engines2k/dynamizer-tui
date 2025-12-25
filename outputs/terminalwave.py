@@ -1,4 +1,4 @@
-from thresholds import AdaptiveThreshold
+from processors import AdaptiveThreshold
 
 class SignalAnalyzer():
 

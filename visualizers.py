@@ -1,4 +1,4 @@
-from thresholds import AdaptiveThreshold
+from processors import AdaptiveThreshold
 
 __all__ = ["bass_beat", "snare_beat"]
 
