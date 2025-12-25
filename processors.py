@@ -1,5 +1,31 @@
 import time
 
+class SignalFollower():
+
+    def __init__(self, attack, decay, floor=0, ceil=None) -> None:
+        self._attack = attack
+        self._decay = decay
+        self._value = 0
+        self._floor = floor
+        self._ceil = ceil
+
+    def track(self, signal):
+        rate_limit = self._attack if signal > self._value else self._decay
+
+        new_val = self._value + max(signal - self._value, rate_limit)
+        bounded_val = max(new_val, self._floor)
+
+        if self._ceil:
+            bounded_val = min(self._value, self._ceil)
+        self._value = bounded_val
+
+        return self._value
+
+    @property
+    def value(self):
+        return self._value
+
+
 class AdaptiveThreshold():
 
     _threshold = 0

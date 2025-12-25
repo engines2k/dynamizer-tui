@@ -50,7 +50,7 @@ class Dynamizer():
 
     def _init_analyzers(self):
         self._analyzers = {
-            'kick_beat_harmony': BeatHarmonySeparator(self.signal_lookback, min_freq=30, max_freq=220, label='kick'),
+            'kick_beat_harmony': BeatHarmonySeparator(self.signal_lookback, floor=3000, min_freq=30, max_freq=220, label='kick'),
             'snare_beat_harmony': BeatHarmonySeparator(self.signal_lookback, min_freq=3000, label='snare'),
         }
 
