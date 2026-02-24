@@ -57,7 +57,7 @@ class Dynamizer():
                 max_freq=220,
                 label='kick',
                 beat_attack=100,
-                beat_decay=50
+                beat_decay=30
             ),
             'snare_beat_harmony': BeatHarmonySeparator(self.signal_lookback, min_freq=3000, label='snare'),
         }
