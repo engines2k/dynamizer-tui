@@ -1,49 +1,112 @@
-# Dynamizer
-A real-time music feature detector and event server.
+<div align="center">
+<pre>
+ ▌         𝅘𝅥      
+▛▌▌▌▛▌▀▌▛▛▌▌▀▌█▌▛▘
+▙▌▙▌▌▌█▌▌▌▌▌▙▖▙▖▌ 
+⸱⸱▄▌⸱•⦁●⦁••⸱⸱⸱⸱⸱⸱⸱
+</pre>
+</div>
+
+<div align="center">
+<h1 style="display: none;">Dynamizer</h1>
+    <p>A real-time music feature detector and event server.</p>
+    <a href="https://github.com/engines2k/dynamizer/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
+    &middot;
+    <a href="https://github.com/engines2k/dynamizer/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a>
+  </p>
+</div>
+
+<details>
+  <summary>Table of Contents</summary>
+  <ol>
+    <li>
+      <a href="#about">About</a>
+    </li>
+    <li>
+      <a href="#getting-started">Getting Started</a>
+      <ul>
+        <li><a href="#prerequisites">Prerequisites</a></li>
+        <li><a href="#installation">Installation</a></li>
+      </ul>
+    </li>
+    <li><a href="#roadmap">Roadmap</a></li>
+    <li><a href="#contributing">Contributing</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ol>
+</details>
+
+## About
+
+Dynamizer is a real-time musical signal analyzer that can drive a multitude of visualizations in many contexts, from terminal spectrum analyzers and WLED audio-reactive lighting setups, to on-the-fly rendered scenes.
+
+There are many options for audio-reactive consumer hardware, but these are often limited by onboard mics and processing, causing delays and inaccuracies that degrade the user's connection between the visual effects and the music being played. The goal of Dynamizer is to provide a low-latency, accurate, and versatile option for those looking for real-time visualizations and lighting effects.
+
+Currently Dynamizer is hard-coded to connect with an WLED controller and 2 strips of lights based on a single channel input, but as it grows it will be expanded to support any user setup, with a graphical interface and dynamic control of mono and stereo inputs, outputs, analyzer settings, and built-in WLED effects.
+
+
+## Getting Started
+
+You can test the project in its current state by following the steps below.
+
+### Prerequisites
+
+* python
+
+### Installation
+
+1. Clone the repo
+   ```sh
+   git clone https://github.com/engines2k/dynamizer.git
+   ```
+2. Install Python packages
+   ```sh
+   cd dynamizer
+   pip install -r requirements.txt
+   ```
+3. Run main.py
+   ```sh
+   python main.py
+   ```
+
 
 ### Roadmap
-- x Terminal spectral analyzer from real-time signal
-- x Basic audio analysis and lookback buffer
-- x Reliable kick detection function
-- Reliable transient detection function for any frequency range
-- Overall loudness / energy function
-- Event bus for outputs, server feature
-- Implement all outputs listed below
-- Compatibility with WLED and other lighting software
+- [x] Terminal spectral analyzer from real-time signal
+- [x] Basic audio analysis and lookback buffer
+- [x] Reliable kick detection function
+- [x] Reliable transient detection function for any frequency range
+- [x] Overall loudness / energy function
+- [x] Event bus for outputs, server feature
+- [ ] Implement outputs listed below (as possible)
+    - [x] energy
+    - [x] low_energy (low_signal)
+    - [x] high_energy (high_signal)
+    - [x] beat_kick
+    - [ ] beat_tom or beat_kick_hz
+    - [x] beat_snare
+    - [ ] beat_density
+    - [ ] brightness
+    - [ ] buzz
+    - [ ] warmth
+    - [ ] chaos
+    - [ ] energy
+    - [ ] mood_state
+      - Based on the previous non-beat related outputs. For example, high energy + high beat_density + high chaos = "aggressive" mood_state
+    - [x] Compatibility with WLED
+    - [ ] Graphical user interface
 
-### Todo
-- SignalAnalyzer: Add the option to 
 
-### Outputs
-Dynamizer will produce all the following outputs:
-- low_energy
-- mid_energy
-- high_energy
-- beat_kick
-- beat_tom
-  - OR beat_kick_hz
-- beat_snare
-- beat_hate
-- buzz
-- warmth
-- chaos
-- energy
-- beat_density
-- brightness
-- mood_state
-  - Computed based on the previous non-beat related outputs. For example, high energy + high beat_density + high chaos = aggressive
+## Contributing
 
-### Goal / Info (kinda old)
+To anyone who would be interested, any contributions would be **greatly appreciated**.
 
-The goal for this project is to create a sound-based, general-purpose 'controller' that can broadcast events based on percussive (/ harmonic) music information in real-time. This could then be used to control a music visualizer or a lighting system. This controller would discriminiate between different types of percussive sounds (kick vs snare) as well as different instruments and sounds (hi-hat 1 vs. hi-hat 2). These would then be able to be mapped to different outputs, which could then perhaps control a splash of color or contrast in a music visualizer, or the color or brightness of an element in a lighting system. Ideally this controller will include outputs that change value based on the harmonic content of the song., or even from the overall current loudness or energy of the song. For example, an output will grow in strength, say from a value of 0 towards 1 based on the pitch / volume of the bass, or even from the overall current loudness or energy of the song.
+If you have a suggestion that would make this better, please fork the repository and create a pull request. You can also simply open an issue with the tag "enhancement".
 
-At the moment, simple onset detection of transients seems like the best way to detect these percussive events in real time. HPSS seems like a good idea in theory for processing transients as well, but I will have to develop this project for a while to see if it actually is useful or necessary. At the moment I suspect that this is probably an expensive operation and would hinder real-time processing.
+Feel free to drop a star if you like.
 
-A machine learning approach sounds like it would be more robust and possibly have a wider application outside of this narrow band of MIR, but I don't have the expertise in ML or the traning data neccessary to explore this option. Perhaps an idea for a second version, if I can get this first one off the ground.
 
-- At the moment, this seems like a decent system for handling real-time audio:
-    * Get input as a window from stream of ~50ms of audio
-    * Analyze for transient onset events
-    * Categorize events into type / channel based on frequency.
-    * Push event into emit queue, or play immediately. This would result in a delay of the window size plus whatever compute time, ideally minimal.
-    * Update longer-term data like bass notes, loudness, song dynamics etc. based on harmonic information
+## Contact
+
+Zeke Barefoot - [@engines2k](https://twitter.com/engines2k) - zekebarefoot0@gmail.com
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+

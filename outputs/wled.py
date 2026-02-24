@@ -1,29 +1,28 @@
 #TODO: Go through and give everything a decent name
 import socket
 import time
-from .light_buffer import LightBuffer, LightBufferFrame
-from collections import deque
+from .light_buffer import LightBuffer
 
 WLED_HOST = "wled-bfn.local"
 WLED_PORT = 21324
 LISTEN_TIMEOUT_SECONDS = 2
 
 LIGHT_SETTINGS_LOW = {
-    'multiplier': .3,
+    'multiplier': 0.3001, #.3
     'adjust': 0,
     'color': (2, 255, 255), #BRG
-    'speed': 5
+    'speed': 6
 }
 
 LIGHT_SETTINGS_LOW_BEAT = {
-    'multiplier': .3,
+    'multiplier': .071,
     'adjust': 0,
     'color': (12, 255, 80), #BRG 
-    'speed': 4
+    'speed': 5
 }
 
 LIGHT_SETTINGS_HIGH = {
-    'multiplier': 1.5,
+    'multiplier': 2,
     'adjust': 0,
     'color': (100, 30, 15), #BRG
     'speed': 6
@@ -100,7 +99,6 @@ class WLEDClient:
         self._light_buffers['high']._handle_signal(signal2 * self.multiplier)  # Snare buffer
         self._light_buffers['low_beat']._handle_signal(kick_signal * self.multiplier)  # Snare buffer
 
-        # Build 50-LED frames for each buffer
         low_frame = self._light_buffers['low'].frame
         high_frame = self._light_buffers['high'].frame
         kick_frame = self._light_buffers['low_beat'].frame
@@ -110,7 +108,6 @@ class WLEDClient:
         payload += bytes(low_combined)
         payload += bytes(high_frame)
 
-        # Strip 2: kick + snare (same pattern)
         payload += bytes(low_combined)
         payload += bytes(high_frame)
 
@@ -140,11 +137,4 @@ class WLEDClient:
         if current_time - self._last_send_time < self._min_send_interval:
             return False
         return True
-
-#buffer1 = deque(maxlen=num_leds)
-#buffer2 = deque(maxlen=num_leds)
-
-#sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-#sock.setblocking(False)
-
 
