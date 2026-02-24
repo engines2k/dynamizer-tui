@@ -28,10 +28,45 @@ LIGHT_SETTINGS_HIGH = {
     'speed': 6
 }
 
+class DelayQueueItem():
+    def __init__(self, data):
+        self.data = data
+        self.created = time.time()*1000
+
+class DelayQueue():
+    def __init__(self, delay=0):
+        self._delay = delay
+        self._queue = deque()
+
+    def push(self, item):
+        self._queue.appendleft(DelayQueueItem(item))
+
+    def get_ready_items(self):
+        result = []
+        current_time = time.time()*1000
+        not_ready = deque()
+
+        # Separate ready items from not-ready items
+        while self._queue:
+            item = self._queue.pop()
+            item_ready_time = item.created + self._delay
+            if item_ready_time <= current_time:
+                result.append(item.data)
+            else:
+                not_ready.appendleft(item)
+
+        # Put not-ready items back in the queue
+        self._queue = not_ready
+        return result
+
 class WLEDClient:
     def __init__(self):
+        self.multiplier = 1.3
+
         self.host = WLED_HOST
         self.port = WLED_PORT
+        self._packet_queue = DelayQueue(delay=130)
+
         self._light_buffers: dict[str, LightBuffer] = {
             'low': LightBuffer(num_leds=50, settings=LIGHT_SETTINGS_LOW),
             'high': LightBuffer(num_leds=50, settings=LIGHT_SETTINGS_HIGH),
@@ -58,9 +93,11 @@ class WLEDClient:
         payload = bytearray()
         payload.append(LISTEN_TIMEOUT_SECONDS)
 
-        self._light_buffers['low']._handle_signal(signal1)  # Kick buffer
-        self._light_buffers['high']._handle_signal(signal2)  # Snare buffer
-        self._light_buffers['low_beat']._handle_signal(kick_signal)  # Snare buffer
+
+        # Process signals into their respective buffers
+        self._light_buffers['low']._handle_signal(signal1 * self.multiplier)  # Kick buffer
+        self._light_buffers['high']._handle_signal(signal2 * self.multiplier)  # Snare buffer
+        self._light_buffers['low_beat']._handle_signal(kick_signal * self.multiplier)  # Snare buffer
 
         low_frame = self._light_buffers['low'].frame
         high_frame = self._light_buffers['high'].frame
@@ -82,11 +119,16 @@ class WLEDClient:
 
         payload = self._build_payload(signal1, signal2, kick_signal**2)
 
-        try:
-            self._socket.sendto(payload, self._resolved_address)
-            self._last_send_time = time.time()
-        except BlockingIOError:
-            pass
+        self._packet_queue.push(payload)
+
+        ready_payloads = self._packet_queue.get_ready_items()
+
+        for payload in ready_payloads:
+            try:
+                self._socket.sendto(payload, self._resolved_address)
+                self._last_send_time = time.time()
+            except BlockingIOError:
+                pass
 
 
     @property
