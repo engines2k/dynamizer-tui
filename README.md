@@ -104,6 +104,11 @@ If you have a suggestion that would make this better, please fork the repository
 Feel free to drop a star if you like.
 
 
+## License
+
+Distributed under GNU GPL v3. See `LICENSE` for more information.
+
+
 ## Contact
 
 Zeke Barefoot - [@engines2k](https://twitter.com/engines2k) - zekebarefoot0@gmail.com
