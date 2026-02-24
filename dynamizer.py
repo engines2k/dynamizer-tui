@@ -7,7 +7,7 @@ from lookback import Lookback
 from types import SimpleNamespace
 from audio_connector import AudioConnector
 import numpy as np
-from scipy.signal import ZoomFFT, freqs
+from scipy.signal import ZoomFFT
 
 __all__ = ["dynamizer"]
 
@@ -31,7 +31,7 @@ class Dynamizer():
         self.low_zoom_fft = ZoomFFT(self.window_size, [20, 100], 80, fs=self.sample_rate)
         self.mid_zoom_fft = ZoomFFT(self.window_size, [100, 1000], 100, fs=self.sample_rate)
         self.high_zoom_fft = ZoomFFT(self.window_size, [1000, 20000], 100, fs=self.sample_rate)
-        # Change this later to be dynamic along with the FFT strategy.
+        #TODO: Change this later to be dynamic along with the FFT strategy.
         self._freq_bins = np.concatenate((
             np.linspace(20, 80, 80),
             np.linspace(100, 1000, 100),

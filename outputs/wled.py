@@ -1,8 +1,7 @@
 #TODO: Go through and give everything a decent name
 import socket
 import time
-from .light_buffer import LightBuffer, LightBufferFrame
-from collections import deque
+from .light_buffer import LightBuffer
 
 WLED_HOST = "wled-bfn.local"
 WLED_PORT = 21324
@@ -23,7 +22,7 @@ LIGHT_SETTINGS_LOW_BEAT = {
 }
 
 LIGHT_SETTINGS_HIGH = {
-    'multiplier': 1.5,
+    'multiplier': 2,
     'adjust': 0,
     'color': (100, 30, 15), #BRG
     'speed': 6
@@ -59,13 +58,10 @@ class WLEDClient:
         payload = bytearray()
         payload.append(LISTEN_TIMEOUT_SECONDS)
 
-
-        # Process signals into their respective buffers
         self._light_buffers['low']._handle_signal(signal1)  # Kick buffer
         self._light_buffers['high']._handle_signal(signal2)  # Snare buffer
         self._light_buffers['low_beat']._handle_signal(kick_signal)  # Snare buffer
 
-        # Build 50-LED frames for each buffer
         low_frame = self._light_buffers['low'].frame
         high_frame = self._light_buffers['high'].frame
         kick_frame = self._light_buffers['low_beat'].frame
@@ -75,7 +71,6 @@ class WLEDClient:
         payload += bytes(low_combined)
         payload += bytes(high_frame)
 
-        # Strip 2: kick + snare (same pattern)
         payload += bytes(low_combined)
         payload += bytes(high_frame)
 
@@ -100,11 +95,4 @@ class WLEDClient:
         if current_time - self._last_send_time < self._min_send_interval:
             return False
         return True
-
-#buffer1 = deque(maxlen=num_leds)
-#buffer2 = deque(maxlen=num_leds)
-
-#sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-#sock.setblocking(False)
-
 
