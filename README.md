@@ -1,6 +1,7 @@
 <a id="readme-top"></a>
 
 <div align="center">
+ <!-- Dynamizer -->
 <pre>
  ▌         𝅘𝅥      
 ▛▌▌▌▛▌▀▌▛▛▌▌▀▌█▌▛▘
@@ -10,7 +11,6 @@
 </div>
 
 <div align="center">
-<h1 style="display: none;">Dynamizer</h1>
     <p>A real-time music feature detector and event server.</p>
     <a href="https://github.com/engines2k/dynamizer/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
     &middot;
