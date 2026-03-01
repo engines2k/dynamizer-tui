@@ -2,6 +2,7 @@
 import socket
 import time
 from .light_buffer import LightBuffer
+from collections import deque
 
 WLED_HOST = "wled-bfn.local"
 WLED_PORT = 21324

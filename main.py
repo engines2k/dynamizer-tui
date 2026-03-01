@@ -1,10 +1,10 @@
-from dynamizer import dynamizer
+from master_analyzer import masteranalyzer
 import time
 
 if __name__ == "__main__":
         print("Dynamizer starting. Press Ctrl+C to quit.")
         time.sleep(.2)
-        dynamizer.activate()
+        masteranalyzer.activate()
 
         try:
             while True:

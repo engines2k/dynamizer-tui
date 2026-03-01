@@ -2,3 +2,5 @@ numpy
 JACK-Client
 scipy
 dotenv
+textual
+textual-dev
