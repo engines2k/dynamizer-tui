@@ -48,9 +48,9 @@ class AudioConnector():
             self._connect_input()
 
     def _disconnect_input(self):
-        if self._input:
-            self._client.disconnect(f'{self._input}_FL', "Visualizer:left")
-            self._client.disconnect(f'{self._input}_FR', "Visualizer:right")
+        for inport in self._client.inports:
+            for connection in self._client.get_all_connections(inport):
+                self._client.disconnect(connection, inport)
 
 
     def deactivate(self):
