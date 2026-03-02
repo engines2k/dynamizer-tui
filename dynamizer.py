@@ -38,11 +38,17 @@ class CoreOptionsControls(HorizontalGroup):
 
     @on(Switch.Changed)
     def toggle_analyzer(self, message: Switch.Changed):
-        if message.value == True:
-            self.app.analyzer.activate()  # type: ignore
-            self._update_status('Dynamizer core start')
+        if message.value == False:
+            self._update_status('Dynamizer core paused')
+            self.app.analyzer.toggle_pause() #type: ignore
+
+        elif self.app.analyzer.active: #type: ignore
+            self.app.analyzer.toggle_pause() #type: ignore
+            self._update_status('Dynamizer core resumed')
+
         else:
-            self._update_status('Dynamizer core stop')
+            self._update_status('Dynamizer core ON')
+            self.app.analyzer.activate()  # type: ignore
 
     def _update_status(self, n_status: str) -> None:
         self._parent.query_one("#status", Static).update(n_status)

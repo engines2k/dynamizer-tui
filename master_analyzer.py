@@ -17,6 +17,7 @@ class MasterAnalyzer():
     window_size = 4096
     hop_size = 64
     lookback_duration_ms = 40
+    _active = False
 
     def __init__(self):
         self._failures = 0
@@ -62,6 +63,10 @@ class MasterAnalyzer():
             'snare_beat_harmony': BeatHarmonySeparator(self.signal_lookback, min_freq=3000, label='snare'),
         }
 
+    @property 
+    def active(self):
+        return self._active
+
     def _calc_a_weighting(self):
         return np.array([a_weighting(freq) for freq in self._freq_bins])
 
@@ -69,6 +74,7 @@ class MasterAnalyzer():
         self._audio_connector.activate()
         for output in self._outputs.values():
             output.activate()
+        self._active = True
 
     def _process_callback(self, n_frames: int) -> None:
         if not self._pause_processing:
@@ -96,7 +102,7 @@ class MasterAnalyzer():
         self._inbuffer = self._inbuffer[self.hop_size:]
         freqs = self._analyze_signal_window(window)
         features = self._analyze_freqs_features(freqs)
-        print(features)
+        #print(features)
         self._output_result(freqs, features)
         self.signal_lookback.push(freqs)
 
@@ -134,7 +140,7 @@ class MasterAnalyzer():
         bass = bass_beat(bins, freqs)
         snare = snare_beat(bins, freqs)
         kick = features['kick_beat']
-        self._outputs.wled.send(bass, snare, kick)
+        self._outputs['wled'].send(bass, snare, kick)
         #self._outputs.terminalwave.send(snare)
 
     def _calc_amp_avg(self, frames):
@@ -175,4 +181,5 @@ class MasterAnalyzer():
         print(f"\nProcessing {status}")
 
 masteranalyzer = MasterAnalyzer()
+
 

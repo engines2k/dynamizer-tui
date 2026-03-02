@@ -2,8 +2,8 @@ CoreOptions {
 	height: 10;
 	background: $boost;
 	align: center middle;
-	position: absolute;
-	offset: 0 25;
+	dock: bottom;
+	padding-bottom: 2;
 }
 
 CoreOptions #status {
