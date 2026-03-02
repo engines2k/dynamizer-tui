@@ -4,6 +4,7 @@ from textual.widgets import Footer, Static, Switch, ProgressBar, Select, TextAre
 from textual.containers import HorizontalGroup, VerticalGroup
 from master_analyzer import masteranalyzer, MasterAnalyzer
 
+
 class DynamizerApp(App):
     """An app for realtime music visualization."""
     analyzer: MasterAnalyzer = masteranalyzer
@@ -27,18 +28,18 @@ class CoreOptionsControls(HorizontalGroup):
     def __init__(self, parent):
         super().__init__()
         self._parent = parent
+        self._port_options = self.app.analyzer.get_available_ports() # type: ignore
 
     BINDINGS = [('x', 'activate_analyzer', "activate")]
 
     def compose(self) -> ComposeResult:
         yield Switch()
         yield ProgressBar(total=50, show_eta=False)
-        yield Select(options=[('hello', 'helloval'), ('world', 'worldval')])
-        yield Select(options=[('inputr', 'helloval'), ('inputr2', 'worldval')])
+        yield Select(options=self._port_options.items())
 
     @on(Switch.Changed)
-    def toggle_analyzer(self, message: Switch.Changed):
-        if message.value == False:
+    def toggle_analyzer(self, event: Switch.Changed):
+        if event.value == False:
             self._update_status('Dynamizer core paused')
             self.app.analyzer.toggle_pause() #type: ignore
 
@@ -49,6 +50,10 @@ class CoreOptionsControls(HorizontalGroup):
         else:
             self._update_status('Dynamizer core ON')
             self.app.analyzer.activate()  # type: ignore
+
+    @on(Select.Changed)
+    def switch_analyzer_input(self, event: Select.Changed):
+        self.app.analyzer.audio_connector.change_input(event.value) # type: ignore
 
     def _update_status(self, n_status: str) -> None:
         self._parent.query_one("#status", Static).update(n_status)

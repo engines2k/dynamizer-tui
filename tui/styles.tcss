@@ -17,6 +17,8 @@ CoreOptionsControls {
 }
 
 CoreOptionsControls ProgressBar {
+	border: wide $boost;
+	height: 3;
 	margin-top: 1;
 }
 

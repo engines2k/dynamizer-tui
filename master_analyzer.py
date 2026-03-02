@@ -1,4 +1,7 @@
 import time
+import re
+from typing import Dict, List, Tuple
+from jack import Port
 from analyzers import BeatHarmonySeparator
 import outputs
 from weightings import a_weighting
@@ -23,7 +26,7 @@ class MasterAnalyzer():
         self._failures = 0
         self._inbuffer = np.ndarray(1)
         self._pause_processing = False
-        self._audio_connector = AudioConnector(self._process_callback)
+        self.audio_connector = AudioConnector(self._process_callback)
         self.signal_lookback = Lookback(self.lookback_duration_ms, self.sample_rate, self.hop_size)
 
         self._signal_windower = np.hanning(self.window_size)
@@ -63,6 +66,26 @@ class MasterAnalyzer():
             'snare_beat_harmony': BeatHarmonySeparator(self.signal_lookback, min_freq=3000, label='snare'),
         }
 
+    def get_available_ports(self) -> Dict[str, str]:
+        result = {}
+        ports = self.audio_connector.available_ports
+        valid_ports = [ port for port in ports if self.valid_outport(port) ]
+        for port in valid_ports:
+            result[self._pretty_port_name(port.name)] = port.name[:-3]
+        return result
+        
+
+    @staticmethod
+    def _pretty_port_name(pretty: str) -> str:
+        pretty = re.sub(r':(monitor|output)_\w\w', "", pretty)
+        return pretty
+
+    @staticmethod
+    def valid_outport(port: Port):
+        if ('capture' in port.name or 'playback' in port.name) or ('FL' not in port.name):
+            return False
+        return True
+
     @property 
     def active(self):
         return self._active
@@ -71,7 +94,7 @@ class MasterAnalyzer():
         return np.array([a_weighting(freq) for freq in self._freq_bins])
 
     def activate(self) -> None:
-        self._audio_connector.activate()
+        self.audio_connector.activate()
         for output in self._outputs.values():
             output.activate()
         self._active = True
@@ -90,7 +113,7 @@ class MasterAnalyzer():
             self._process_buffer_window()
 
     def _load_frames_into_buffer(self) -> None:
-        inports = self._audio_connector.inports
+        inports = self.audio_connector.inports
         frame = inports[0].get_array() # type: ignore
         self._inbuffer = np.concatenate((self._inbuffer, frame))
 
