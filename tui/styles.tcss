@@ -1,9 +1,17 @@
+#ascii-art {
+	width: 100%;
+	dock: top;
+	content-align: center middle;
+}
+
 CoreOptions {
-	height: 10;
+	height: auto;
 	background: $boost;
 	align: center middle;
 	dock: bottom;
-	padding-bottom: 2;
+	padding-top: 4;
+	padding-bottom: 4;
+	height: 50%;
 }
 
 CoreOptions #status {

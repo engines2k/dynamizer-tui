@@ -18,7 +18,10 @@ class DynamizerApp(App):
 class CoreOptions(VerticalGroup):
     """Core options plus status bar"""
 
+    ASCII_ART = " ▌         𝅘𝅥      \n▛▌▌▌▛▌▀▌▛▛▌▌▀▌█▌▛▘\n▙▌▙▌▌▌█▌▌▌▌▌▙▖▙▖▌ \n⸱⸱▄▌⸱•⦁●⦁••⸱⸱⸱⸱⸱⸱⸱"
+
     def compose(self) -> ComposeResult:
+        yield Static(self.ASCII_ART, id='ascii-art')
         yield CoreOptionsControls(self)
         yield Static("Status text here", id='status')
 
