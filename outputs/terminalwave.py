@@ -6,6 +6,9 @@ class SignalAnalyzer():
         self._threshold = AdaptiveThreshold(decay_rate=1)
         self._output_width = output_width
 
+    def activate(self):
+        pass
+
     def send(self, signal):
         self._threshold.track(signal)
         ceiling = self._threshold.current + .00000000000001

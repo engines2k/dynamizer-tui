@@ -74,13 +74,13 @@ class WLEDClient:
             'low_beat': LightBuffer(num_leds=50, settings=LIGHT_SETTINGS_LOW_BEAT)
         }
         
-        self._socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self._socket.setblocking(False)
-        
         self._max_send_rate_hz = 250
         self._min_send_interval = 1.0 / self._max_send_rate_hz
         self._last_send_time = 0
 
+    def activate(self):
+        self._socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self._socket.setblocking(False)
         self._resolve_address()
 
     def _resolve_address(self):

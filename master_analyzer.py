@@ -4,7 +4,6 @@ import outputs
 from weightings import a_weighting
 from visualizers import  bass_beat, snare_beat
 from lookback import Lookback
-from types import SimpleNamespace
 from audio_connector import AudioConnector
 import numpy as np
 from scipy.signal import ZoomFFT
@@ -23,11 +22,15 @@ class MasterAnalyzer():
         self._failures = 0
         self._inbuffer = np.ndarray(1)
         self._pause_processing = False
-        self._audio_connector = AudioConnector(self.process_callback)
+        self._audio_connector = AudioConnector(self._process_callback)
         self.signal_lookback = Lookback(self.lookback_duration_ms, self.sample_rate, self.hop_size)
 
         self._signal_windower = np.hanning(self.window_size)
+        self._init_fft()
+        self._init_outputs()
+        self._init_analyzers()
 
+    def _init_fft(self):
         self.low_zoom_fft = ZoomFFT(self.window_size, [20, 100], 80, fs=self.sample_rate)
         self.mid_zoom_fft = ZoomFFT(self.window_size, [100, 1000], 100, fs=self.sample_rate)
         self.high_zoom_fft = ZoomFFT(self.window_size, [1000, 20000], 100, fs=self.sample_rate)
@@ -37,16 +40,13 @@ class MasterAnalyzer():
             np.linspace(100, 1000, 100),
             np.linspace(1000, 20000, 100)
         ))
-        self.weightings = self.calc_a_weighting()
-
-        self._init_outputs()
-        self._init_analyzers()
+        self.weightings = self._calc_a_weighting()
 
     def _init_outputs(self):
-        self._outputs = SimpleNamespace(**{
+        self._outputs = {
             "wled": outputs.wled.WLEDClient(),
             "terminalwave": outputs.SignalAnalyzer(),
-        })
+        }
 
     def _init_analyzers(self):
         self._analyzers = {
@@ -62,17 +62,19 @@ class MasterAnalyzer():
             'snare_beat_harmony': BeatHarmonySeparator(self.signal_lookback, min_freq=3000, label='snare'),
         }
 
-    def calc_a_weighting(self):
+    def _calc_a_weighting(self):
         return np.array([a_weighting(freq) for freq in self._freq_bins])
 
     def activate(self) -> None:
         self._audio_connector.activate()
+        for output in self._outputs.values():
+            output.activate()
 
-    def process_callback(self, n_frames: int) -> None:
+    def _process_callback(self, n_frames: int) -> None:
         if not self._pause_processing:
-            self.process_frames(n_frames)
+            self._process_frames(n_frames)
 
-    def process_frames(self, n_frames: int) -> None:
+    def _process_frames(self, n_frames: int) -> None:
         if len(self._inbuffer) > self.sample_rate // 4:
             self.attempt_recovery()
 
@@ -98,8 +100,6 @@ class MasterAnalyzer():
         self._output_result(freqs, features)
         self.signal_lookback.push(freqs)
 
-        #self._calculate_features()
-
     def _analyze_signal_window(self, x):
         x = self._apply_window_function(x)
         freqs = self._apply_fft_strategy(x)
@@ -107,14 +107,10 @@ class MasterAnalyzer():
         return freqs
 
     def _analyze_freqs_features(self, freqs):
-        # Separate transient from harmony (bass)
-        # Separate transient from harmony (snare)
         features = {}
         for analyzer in self._analyzers:
-            features = {
-                **features,
-                **self._analyzers[analyzer].analyze(self._freq_bins, freqs)
-            }
+            feature = self._analyzers[analyzer].analyze(self._freq_bins, freqs)
+            features.update(feature)
         return features
 
     def _apply_window_function(self, x):

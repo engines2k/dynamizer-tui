@@ -1,15 +1,23 @@
-CoreOptions {   
-    background: $boost;
-    height: 5;
+CoreOptions {
+	height: 10;
+	background: $boost;
+	align: center middle;
+	position: absolute;
+	offset: 0 25;
+}
+
+CoreOptions #status {
+	text-align: center;
+}
+
+CoreOptionsControls {   
     margin: 1;
     min-width: 50;
     padding: 1;
 }
 
-TimeDisplay {   
-    text-align: center;
-    color: $foreground-muted;
-    height: 3;
+CoreOptionsControls ProgressBar {
+	margin-top: 1;
 }
 
 Switch {

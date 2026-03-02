@@ -23,12 +23,12 @@ class AudioConnector():
 
     def activate(self):
         self._client.activate()
-        self.connect_devices()
+        self._connect_devices()
 
     def deactivate(self):
         self._client.deactivate()
 
-    def connect_devices(self):
+    def _connect_devices(self):
         self._client.connect(INPUT_LEFT, "Visualizer:left")
         self._client.connect(INPUT_RIGHT, "Visualizer:right")
 
