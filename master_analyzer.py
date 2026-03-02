@@ -4,6 +4,7 @@ from typing import Dict, List, Tuple
 from jack import Port
 from analyzers import BeatHarmonySeparator
 import outputs
+from outputs.abstract_analyzer import AbstractAnalyzer
 from weightings import a_weighting
 from visualizers import  bass_beat, snare_beat
 from lookback import Lookback
@@ -32,7 +33,7 @@ class MasterAnalyzer():
         self._signal_windower = np.hanning(self.window_size)
         self._init_fft()
         self._init_outputs()
-        self._init_analyzers()
+        self._init_processors()
 
     def _init_fft(self):
         self.low_zoom_fft = ZoomFFT(self.window_size, [20, 100], 80, fs=self.sample_rate)
@@ -49,10 +50,13 @@ class MasterAnalyzer():
     def _init_outputs(self):
         self._outputs = {
             "wled": outputs.wled.WLEDClient(),
-            "terminalwave": outputs.SignalAnalyzer(),
+            "terminalwave": outputs.SignalAnalyzer('kick_beat'),
         }
 
-    def _init_analyzers(self):
+    def add_output(self, label: str, output: AbstractAnalyzer):
+        self._outputs[label] = output
+
+    def _init_processors(self):
         self._analyzers = {
             'kick_beat_harmony': BeatHarmonySeparator(
                 self.signal_lookback,
@@ -63,7 +67,11 @@ class MasterAnalyzer():
                 beat_attack=100,
                 beat_decay=30
             ),
-            'snare_beat_harmony': BeatHarmonySeparator(self.signal_lookback, min_freq=3000, label='snare'),
+            'snare_beat_harmony': BeatHarmonySeparator(
+                self.signal_lookback,
+                min_freq=3000,
+                label='snare'
+            ),
         }
 
     def get_available_ports(self) -> Dict[str, str]:
@@ -137,9 +145,9 @@ class MasterAnalyzer():
 
     def _analyze_freqs_features(self, freqs):
         features = {}
-        for analyzer in self._analyzers:
-            feature = self._analyzers[analyzer].analyze(self._freq_bins, freqs)
-            features.update(feature)
+        for analyzer in self._analyzers.values():
+            feature_set = analyzer.analyze(self._freq_bins, freqs)
+            features.update(feature_set)
         return features
 
     def _apply_window_function(self, x):
@@ -160,10 +168,11 @@ class MasterAnalyzer():
 
     def _output_result(self, freqs, features):
         bins = self._freq_bins
-        bass = bass_beat(bins, freqs)
-        snare = snare_beat(bins, freqs)
+        bass = features['kick_signal'] #bass_beat(bins, freqs)
+        snare = features['snare_signal'] #snare_beat(bins, freqs)
         kick = features['kick_beat']
         self._outputs['wled'].send(bass, snare, kick)
+        self._outputs['terminalwave'].send(features)
         #self._outputs.terminalwave.send(snare)
 
     def _calc_amp_avg(self, frames):

@@ -1,28 +1,37 @@
 from processors import AdaptiveThreshold
+from .abstract_analyzer import AbstractAnalyzer
 
-class SignalAnalyzer():
+class SignalAnalyzer(AbstractAnalyzer):
 
-    def __init__(self, output_width=100):
+    def __init__(self, feature_key: str, output_width=20):
         self._threshold = AdaptiveThreshold(decay_rate=1)
         self._output_width = output_width
+        self._key = feature_key
+        self.result = ''
 
     def activate(self):
         pass
 
-    def send(self, signal):
+    def send(self, features):
+        signal = features[self._key]
         self._threshold.track(signal)
         ceiling = self._threshold.current + .00000000000001
-        #print(f"{signal}  ({ceiling} {self._output_width})")
-        print("*" * int((signal / ceiling) * self._output_width))
+        self.result = ("*" * int((signal / ceiling) * self._output_width))
+        print('hello' + self.result)
 
 
-def FrequencyAnalyzer(bins, freqs):
-    res = ""
-    for i in range(0, len(freqs), 2):
-        strength = int(freqs[i])
-        if strength > 25:
-            res += f"{strength % 100:1.0f} "
-        else:
-            res += " ."
-    print(res)
+class FrequencyAnalyzer(AbstractAnalyzer):
+
+    def activate(self):
+        pass
+
+    def send(self, features):
+        res = ""
+        for i in range(0, len(features['freqs']), 2):
+            strength = int(features['freqs'][i])
+            if strength > 25:
+                res += f"{strength % 100:1.0f} "
+            else:
+                res += " ."
+            print(res)
 
