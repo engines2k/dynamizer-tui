@@ -1,4 +1,3 @@
-#TODO: Go through and give everything a decent name
 import socket
 import time
 from .light_buffer import LightBuffer, LightDevice
@@ -11,7 +10,7 @@ WLED_PORT = 21324
 LISTEN_TIMEOUT_SECONDS = 2
 
 LIGHT_SETTINGS_LOW = {
-    'multiplier': 0.3001, #.3
+    'multiplier': .3,
     'adjust': 0,
     'color': (2, 255, 255), #BRG
     'speed': 6
@@ -39,25 +38,28 @@ class WLEDClient:
         self._packet_queue = DelayQueue(delay=0)
         self._active = False
         self._light_buffers: dict[str, LightBuffer] = {
-            'kick_signal': LightBuffer(n_frames=50, settings=LIGHT_SETTINGS_LOW),
-            'snare_signal': LightBuffer(n_frames=50, settings=LIGHT_SETTINGS_HIGH),
-            'kick_beat': LightBuffer(n_frames=50, settings=LIGHT_SETTINGS_LOW_BEAT)
+            'kick_signal': LightBuffer(n_frames=60, settings=LIGHT_SETTINGS_LOW),
+            'snare_signal': LightBuffer(n_frames=40, settings=LIGHT_SETTINGS_HIGH),
+            'kick_beat': LightBuffer(n_frames=60, settings=LIGHT_SETTINGS_LOW_BEAT)
         }
 
         self.light_devices: List[LightDevice] = [
             LightDevice(
                 n_leds=100,
                 buffers=[
-                    self._light_buffers['kick_signal'],
-                    self._light_buffers['kick_beat']
+                    (0, self._light_buffers['kick_signal']),
+                    (0, self._light_buffers['kick_beat']),
+                    (60, self._light_buffers['snare_signal']),
                 ]
             ),
             LightDevice(
                 n_leds=100,
                 buffers=[
-                    self._light_buffers['snare_signal'],
+                    (0, self._light_buffers['snare_signal']),
+                    (60, self._light_buffers['kick_signal']),
+                    (60, self._light_buffers['kick_beat']),
                 ]
-            ),
+            )
         ]
         self._max_send_rate_hz = 250
         self._min_send_interval = 1.0 / self._max_send_rate_hz
