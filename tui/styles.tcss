@@ -1,17 +1,23 @@
 #ascii-art {
 	width: 100%;
-	dock: top;
 	content-align: center middle;
+}
+
+VisualizerDisplay {
+	padding: 1;
+	border: dashed $boost;
+}
+
+WLEDOptions {
+   layout: horizontal;
+   height: auto;
 }
 
 CoreOptions {
 	height: auto;
 	background: $boost;
 	align: center middle;
-	dock: bottom;
-	padding-top: 4;
-	padding-bottom: 4;
-	height: 50%;
+	padding: 1;
 }
 
 CoreOptions #status {
@@ -37,17 +43,4 @@ Switch {
 
 Button {
     width: 16;
-}
-
-#start {
-    dock: left;
-}
-
-#stop {
-    dock: left;
-    display: none;
-}
-
-#reset {
-    dock: right;
 }

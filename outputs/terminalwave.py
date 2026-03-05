@@ -1,13 +1,18 @@
+from typing import Callable, List
 from processors import AdaptiveThreshold
 from .abstract_analyzer import AbstractAnalyzer
 
 class SignalAnalyzer(AbstractAnalyzer):
 
-    def __init__(self, feature_key: str, output_width=20):
+    def __init__(self, feature_key: str, output_width=40):
         self._threshold = AdaptiveThreshold(decay_rate=1)
         self._output_width = output_width
         self._key = feature_key
         self.result = ''
+        self._callbacks: List[Callable] = []
+
+    def subscribe(self, callback: Callable) -> None:
+        self._callbacks.append(callback)
 
     def activate(self):
         pass
@@ -17,7 +22,8 @@ class SignalAnalyzer(AbstractAnalyzer):
         self._threshold.track(signal)
         ceiling = self._threshold.current + .00000000000001
         self.result = ("*" * int((signal / ceiling) * self._output_width))
-        print('hello' + self.result)
+        for callback in self._callbacks:
+            callback(self.result)
 
 
 class FrequencyAnalyzer(AbstractAnalyzer):

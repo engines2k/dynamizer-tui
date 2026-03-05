@@ -1,4 +1,29 @@
 from collections import deque
+from typing import List
+
+class LightDevice():
+    def __init__(self, n_leds, buffers: List[LightBuffer]=[]):
+        self._n_leds = n_leds
+        self._buffers: List[LightBuffer] = buffers
+
+    @property
+    def n_leds(self):
+        return self._n_leds
+
+    def set_n_leds(self, n_leds):
+        self._n_leds = n_leds
+
+    def build_payload(self):
+        if self._buffers is None:
+            return []
+        result: LightBufferFrame = LightBufferFrame()
+        for buffer in self._buffers:
+            if not result:
+                result = buffer.frame
+            else:
+                result = result + buffer.frame
+        return result
+
 
 class LightBufferFrame:
     def __init__(self, frame=[]):
@@ -33,15 +58,24 @@ class LightBufferFrame:
         if i < len(other):
             added.append(other[i:])
 
-        return added
+        return LightBufferFrame(added)
 
 class LightBuffer:
-    def __init__(self, num_leds, settings):
-        self.buffer = deque(maxlen=num_leds)
+    def __init__(self, n_frames, settings):
+        self._n_frames = n_frames
+        self.buffer = deque(maxlen=self._n_frames)
         self.settings = settings
         self.frame = LightBufferFrame()
 
-    def _handle_signal(self, signal):
+    @property
+    def size(self):
+        return self._n_frames
+
+    def set_size(self, n_frames: int):
+        self._n_frames = n_frames
+        self.buffer = deque(maxlen=self._n_frames)
+
+    def handle_signal(self, signal):
         intensity = self.calc_intensity(signal)
         blended_intensities = self._blend_signal(intensity)
         self.buffer.extendleft(blended_intensities)
@@ -60,11 +94,11 @@ class LightBuffer:
             result.append(blended)
         return result
 
-    def _build_frame(self, num_leds=50):
+    def _build_frame(self):
         """Build a frame with specified number of LEDs (default 50).
         Takes half the LEDs, mirrors them to create the full strip pattern."""
         buffer_list = list(self.buffer)
-        half_leds = num_leds // 2
+        half_leds = self._n_frames // 2
         num_items = min(len(buffer_list), half_leds)
 
         frame = buffer_list[:num_items]

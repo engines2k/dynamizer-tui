@@ -1,12 +1,9 @@
 import time
-import re
-from typing import Dict, List, Tuple
-from jack import Port
+from typing import List, Callable
 from analyzers import BeatHarmonySeparator
 import outputs
 from outputs.abstract_analyzer import AbstractAnalyzer
 from weightings import a_weighting
-from visualizers import  bass_beat, snare_beat
 from lookback import Lookback
 from audio_connector import AudioConnector
 import numpy as np
@@ -21,12 +18,15 @@ class MasterAnalyzer():
     window_size = 4096
     hop_size = 64
     lookback_duration_ms = 40
+    min_callback_interval_ms = 33
     _active = False
 
     def __init__(self):
         self._failures = 0
         self._inbuffer = np.ndarray(1)
         self._pause_processing = False
+        self._callbacks: List[Callable] = []
+        self._last_callback_time = 0.0
         self.audio_connector = AudioConnector(self._process_callback)
         self.signal_lookback = Lookback(self.lookback_duration_ms, self.sample_rate, self.hop_size)
 
@@ -50,11 +50,14 @@ class MasterAnalyzer():
     def _init_outputs(self):
         self._outputs = {
             "wled": outputs.wled.WLEDClient(),
-            "terminalwave": outputs.SignalAnalyzer('kick_beat'),
+            "terminalwave": outputs.SignalAnalyzer('kick_signal'),
         }
 
     def add_output(self, label: str, output: AbstractAnalyzer):
         self._outputs[label] = output
+
+    def subscribe(self, callback: Callable) -> None:
+        self._callbacks.append(callback)
 
     def _init_processors(self):
         self._analyzers = {
@@ -73,26 +76,6 @@ class MasterAnalyzer():
                 label='snare'
             ),
         }
-
-    def get_available_ports(self) -> Dict[str, str]:
-        result = {}
-        ports = self.audio_connector.available_ports
-        valid_ports = [ port for port in ports if self.valid_outport(port) ]
-        for port in valid_ports:
-            result[self._pretty_port_name(port.name)] = port.name[:-3]
-        return result
-        
-
-    @staticmethod
-    def _pretty_port_name(pretty: str) -> str:
-        pretty = re.sub(r':(monitor|output)_\w\w', "", pretty)
-        return pretty
-
-    @staticmethod
-    def valid_outport(port: Port):
-        if ('capture' in port.name or 'playback' in port.name) or ('FL' not in port.name):
-            return False
-        return True
 
     @property 
     def active(self):
@@ -133,8 +116,7 @@ class MasterAnalyzer():
         self._inbuffer = self._inbuffer[self.hop_size:]
         freqs = self._analyze_signal_window(window)
         features = self._analyze_freqs_features(freqs)
-        #print(features)
-        self._output_result(freqs, features)
+        self._output_result(features)
         self.signal_lookback.push(freqs)
 
     def _analyze_signal_window(self, x):
@@ -166,14 +148,14 @@ class MasterAnalyzer():
         freqs = np.clip(freqs, a_min=0, a_max=None)
         return freqs
 
-    def _output_result(self, freqs, features):
-        bins = self._freq_bins
-        bass = features['kick_signal'] #bass_beat(bins, freqs)
-        snare = features['snare_signal'] #snare_beat(bins, freqs)
-        kick = features['kick_beat']
-        self._outputs['wled'].send(bass, snare, kick)
-        self._outputs['terminalwave'].send(features)
-        #self._outputs.terminalwave.send(snare)
+    def _output_result(self, features):
+        current_time = time.time() * 1000
+        for output in self._outputs.values():
+            output.send(features)
+        if current_time - self._last_callback_time >= self.min_callback_interval_ms:
+            self._last_callback_time = current_time
+            for callback in self._callbacks:
+                callback(features)
 
     def _calc_amp_avg(self, frames):
         return np.average(np.average(frames, axis=1))

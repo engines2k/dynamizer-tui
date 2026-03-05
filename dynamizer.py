@@ -1,8 +1,12 @@
 from textual import on
 from textual.app import App, ComposeResult
-from textual.widgets import Footer, Static, Switch, ProgressBar, Select, TextArea
+from textual.widgets import Button, Footer, Input, Label, Static, Switch, ProgressBar, Select
 from textual.containers import HorizontalGroup, VerticalGroup
+from textual.widget import Widget
+from textual.reactive import reactive
 from master_analyzer import masteranalyzer, MasterAnalyzer
+from outputs.terminalwave import SignalAnalyzer
+from outputs.wled import LightBuffer
 
 
 class DynamizerApp(App):
@@ -15,6 +19,48 @@ class DynamizerApp(App):
         yield CoreOptions()
         yield Footer()
 
+class WLEDOptions(VerticalGroup):
+
+    buffers = [LightBuffer(100, {}), LightBuffer(100, {})]
+
+    def __init__(self):
+        super().__init__()
+    
+    def on_mount(self) -> None:
+        self.wled_output = self.app.analyzer._outputs['wled']  # type: ignore
+    
+    def compose(self) -> ComposeResult:
+        for (i, buffer) in enumerate(self.buffers):
+            yield WLEDBufferControls(i, buffer)
+
+class WLEDBufferControls(HorizontalGroup):
+
+    def __init__(self, idx, buffer):
+        super().__init__()
+        self.idx = idx
+        self._buffer = buffer
+
+    def compose(self) -> ComposeResult:
+        yield Label(content=str(self.idx))
+        yield Input(type='integer', value=str(self._buffer.size))
+
+class VisualizerDisplay(Static):
+    """Displays analyzer results reactively."""
+
+    kick_signal = reactive("")
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.app.analyzer.subscribe(self._on_result) # type: ignore
+        self.visualizer = SignalAnalyzer('kick_signal')
+
+    def _on_result(self, features) -> None:
+        self.visualizer.send(features)
+        self.kick_signal = self.visualizer.result
+
+    def watch_kick_signal(self, value: str) -> None:
+        self.update(value)
+
 class CoreOptions(VerticalGroup):
     """Core options plus status bar"""
 
@@ -22,6 +68,8 @@ class CoreOptions(VerticalGroup):
 
     def compose(self) -> ComposeResult:
         yield Static(self.ASCII_ART, id='ascii-art')
+        yield VisualizerDisplay(id='analyzer-display')  # type: ignore
+        yield WLEDOptions()
         yield CoreOptionsControls(self)
         yield Static("Status text here", id='status')
 
@@ -31,7 +79,7 @@ class CoreOptionsControls(HorizontalGroup):
     def __init__(self, parent):
         super().__init__()
         self._parent = parent
-        self._port_options = self.app.analyzer.get_available_ports() # type: ignore
+        self._port_options = self.app.analyzer.audio_connector.get_available_ports() # type: ignore
 
     BINDINGS = [('x', 'activate_analyzer', "activate")]
 
