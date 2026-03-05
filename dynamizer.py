@@ -6,7 +6,6 @@ from textual.widget import Widget
 from textual.reactive import reactive
 from master_analyzer import masteranalyzer, MasterAnalyzer
 from outputs.terminalwave import SignalAnalyzer
-from outputs.wled import LightBuffer
 
 
 class DynamizerApp(App):
@@ -21,28 +20,35 @@ class DynamizerApp(App):
 
 class WLEDOptions(VerticalGroup):
 
-    buffers = [LightBuffer(100, {}), LightBuffer(100, {})]
-
-    def __init__(self):
-        super().__init__()
-    
-    def on_mount(self) -> None:
-        self.wled_output = self.app.analyzer._outputs['wled']  # type: ignore
+    @property
+    def wled_output(self):
+        return self.app.analyzer._outputs['wled']  # type: ignore
     
     def compose(self) -> ComposeResult:
-        for (i, buffer) in enumerate(self.buffers):
-            yield WLEDBufferControls(i, buffer)
+        for (i, device) in enumerate(self.wled_output.light_devices):
+            yield WLEDLightDeviceControls(i, device)
 
-class WLEDBufferControls(HorizontalGroup):
 
-    def __init__(self, idx, buffer):
+class WLEDLightDeviceControls(HorizontalGroup):
+
+    def __init__(self, idx, device):
         super().__init__()
         self.idx = idx
-        self._buffer = buffer
+        self._device = device
 
     def compose(self) -> ComposeResult:
-        yield Label(content=str(self.idx))
-        yield Input(type='integer', value=str(self._buffer.size))
+        yield Label(content=f"Device {self.idx}")
+        yield Input(type='integer', value=str(self._device.n_leds), id='led-count')
+
+    @on(Input.Changed)
+    def on_led_count_changed(self, event: Input.Changed) -> None:
+        if event.input.id == 'led-count':
+            try:
+                n_leds = int(event.value)
+                if n_leds > 0:
+                    self._device.set_n_leds(n_leds)
+            except ValueError:
+                pass
 
 class VisualizerDisplay(Static):
     """Displays analyzer results reactively."""
