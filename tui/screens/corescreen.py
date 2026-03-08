@@ -63,7 +63,7 @@ class CoreOptionsControls(HorizontalGroup):
         input_select = Select(options=input_items, value=first_value)
         input_select.border_title = 'audio src'
         volume_control = VolumeControl(total=100)
-        volume_control.border_subtitle = 'volume'
+        volume_control.border_subtitle = 'sensitivity'
         volume_control.styles.border_subtitle_align = 'right'
 
         yield power_switch

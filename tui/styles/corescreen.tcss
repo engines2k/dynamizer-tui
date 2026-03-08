@@ -4,7 +4,6 @@ VisualizerDisplay {
 }
 
 CoreOptionsControls {
-	margin: 1;
 	min-width: 50;
 	padding: 1;
 	align: center middle;
@@ -29,13 +28,6 @@ CoreOptionsControls Select:focus {
 	color: $accent;
 }
 
-CoreOptionsControls Label {
-	width: 0;
-	overflow: scroll;
-	position: relative;
-	offset: 0 3;
-}
-
 VolumeControl {
 	border: solid $boost;
 	align: center top;
@@ -43,7 +35,7 @@ VolumeControl {
 	margin-top: 0;
 	margin-left: 1;
 	height: 3;
-	width: 44;
+	width: 49;
 	color: $text;
 }
 
