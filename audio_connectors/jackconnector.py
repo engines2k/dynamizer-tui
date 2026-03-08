@@ -2,7 +2,7 @@ import os
 import jack
 from dotenv import load_dotenv
 
-from .AbstractConnector import AbstractConnector
+from .abstractconnector import AbstractConnector
 
 load_dotenv()
 
