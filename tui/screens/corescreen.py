@@ -58,9 +58,17 @@ class CoreOptionsControls(HorizontalGroup):
     def compose(self) -> ComposeResult:
         input_items = self._port_options.items()
         first_value = list(self._port_options.values())[0] if self._port_options else None
-        yield Switch(id="power")
-        yield Select(options=input_items, value=first_value)
-        yield VolumeControl(total=200)
+        power_switch = Switch(id="power")
+        power_switch.border_subtitle = '⏻'
+        input_select = Select(options=input_items, value=first_value)
+        input_select.border_title = 'audio src'
+        volume_control = VolumeControl(total=100)
+        volume_control.border_subtitle = 'volume'
+        volume_control.styles.border_subtitle_align = 'right'
+
+        yield power_switch
+        yield input_select
+        yield volume_control
 
     @on(Switch.Changed)
     def toggle_analyzer(self, event: Switch.Changed):

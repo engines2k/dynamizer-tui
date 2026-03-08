@@ -8,6 +8,7 @@ CoreOptionsControls {
 	min-width: 50;
 	padding: 1;
 	align: center middle;
+	height: 10;
 }
 
 CoreOptionsControls Switch {
@@ -16,17 +17,39 @@ CoreOptionsControls Switch {
 }
 
 CoreOptionsControls Select {
-	height: 3;
+	margin-left: 1;
+	height: 5;
 	width: 40;
+	border: solid $boost;
+	color: $text;
+}
+
+CoreOptionsControls Select:focus {
+	border: solid $accent;
+	color: $accent;
+}
+
+CoreOptionsControls Label {
+	width: 0;
+	overflow: scroll;
+	position: relative;
+	offset: 0 3;
 }
 
 VolumeControl {
-	border: ascii $boost;
+	border: solid $boost;
 	align: center top;
-	padding: 0;
+	padding-left: 1;
 	margin-top: 0;
+	margin-left: 1;
 	height: 3;
-	width: 50;
+	width: 44;
+	color: $text;
+}
+
+VolumeControl:focus, VolumeControl:focus-within {
+	border: solid $success;
+	color: $accent;
 }
 
 VolumeControl ProgressBar {

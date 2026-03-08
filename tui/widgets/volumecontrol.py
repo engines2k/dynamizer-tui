@@ -12,8 +12,8 @@ class VolumeControl(HorizontalGroup):
         self.total = total
 
     def compose(self) -> ComposeResult:
-        yield Button("-", id='decrement', variant='default')
         yield ProgressBar(total=self.total, show_eta=False, id='volume-bar')
+        yield Button("-", id='decrement', variant='default')
         yield Button("+", id='increment', variant='default')
 
     def on_mount(self) -> None:
