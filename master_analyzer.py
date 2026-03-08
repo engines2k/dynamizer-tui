@@ -1,13 +1,13 @@
 import time
 import re
-from typing import Dict, List, Tuple
+from typing import Dict
 from jack import Port
 from analyzers import BeatHarmonySeparator
 import outputs
 from weightings import a_weighting
 from visualizers import  bass_beat, snare_beat
 from lookback import Lookback
-from audio_connector import AudioConnector
+from audio_connectors import JACKConnector
 import numpy as np
 from scipy.signal import ZoomFFT
 
@@ -26,7 +26,7 @@ class MasterAnalyzer():
         self._failures = 0
         self._inbuffer = np.ndarray(1)
         self._pause_processing = False
-        self.audio_connector = AudioConnector(self._process_callback)
+        self.audio_connector = JACKConnector(self._process_callback)
         self.signal_lookback = Lookback(self.lookback_duration_ms, self.sample_rate, self.hop_size)
 
         self._signal_windower = np.hanning(self.window_size)
@@ -113,8 +113,8 @@ class MasterAnalyzer():
             self._process_buffer_window()
 
     def _load_frames_into_buffer(self) -> None:
-        inports = self.audio_connector.inports
-        frame = inports[0].get_array() # type: ignore
+        inputs = self.audio_connector.inputs
+        frame = inputs[0].get_array() # type: ignore
         self._inbuffer = np.concatenate((self._inbuffer, frame))
 
     def _buffer_ready(self):

@@ -1,6 +1,6 @@
 from textual import on
 from textual.app import App, ComposeResult
-from textual.widgets import Footer, Static, Switch, ProgressBar, Select, TextArea
+from textual.widgets import Footer, Static, Switch, ProgressBar, Select
 from textual.containers import HorizontalGroup, VerticalGroup
 from master_analyzer import masteranalyzer, MasterAnalyzer
 
