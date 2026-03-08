@@ -1,0 +1,41 @@
+VisualizerDisplay {
+	padding: 1;
+	border: dashed $boost;
+}
+
+CoreOptionsControls {
+	margin: 1;
+	min-width: 50;
+	padding: 1;
+	align: center middle;
+}
+
+CoreOptionsControls Switch {
+	padding: 0 1;
+	height: 3;
+}
+
+CoreOptionsControls Select {
+	height: 3;
+	width: 40;
+}
+
+VolumeControl {
+	border: ascii $boost;
+	align: center top;
+	padding: 0;
+	margin-top: 0;
+	height: 3;
+	width: 50;
+}
+
+VolumeControl ProgressBar {
+}
+
+VolumeControl Button {
+	min-width: 2;
+	height: 1;
+	padding: 0;
+	border: none;
+	margin: 0 1;
+}

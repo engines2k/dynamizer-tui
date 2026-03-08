@@ -1,0 +1,37 @@
+DynamizerLogo {
+	width: 100%;
+	content-align: center middle;
+}
+
+BaseScreen {
+	background: $boost;
+	align: center middle;
+	padding: 1;
+}
+
+BaseScreen #status {
+	text-align: center;
+}
+
+ScreenContent {
+	content-align: center middle;
+	padding: 2 5;
+}
+
+VolumeControl {
+	align: center top;
+	padding: 0;
+	margin-top: -1;
+}
+
+VolumeControl ProgressBar {
+	height: 3;
+}
+
+VolumeControl Button {
+	min-width: 2;
+	height: 1;
+	padding: 0;
+	border: none;
+	margin: 2 1;
+}
