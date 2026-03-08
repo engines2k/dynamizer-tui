@@ -10,6 +10,10 @@ VisualizerDisplay {
 	max-width: 50;
 }
 
+#analyze-low {
+	margin: 1 2 0 0;
+}
+
 #analyze-low > .sparkline--max-color {
 	color: $warning;
 }
