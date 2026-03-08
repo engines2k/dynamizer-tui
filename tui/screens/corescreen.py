@@ -1,7 +1,7 @@
 from textual.screen import Screen
 from outputs.terminalwave import SignalAnalyzer
 from textual import on
-from textual.widgets import Header, Static, Label, Select, Switch, Footer
+from textual.widgets import Header, Static, Label, Select, Switch, Footer, Sparkline
 from textual.app import ComposeResult
 from textual.containers import VerticalGroup, HorizontalGroup
 from textual.reactive import reactive
@@ -23,27 +23,34 @@ class CoreOptions(VerticalGroup):
     """Core options plus status bar"""
 
     def compose(self) -> ComposeResult:
-        yield VisualizerDisplay(id='analyzer-display')  # type: ignore
+        yield Visualizers()
         yield CoreOptionsControls(self)
         yield Static("", id='status')
 
+class Visualizers(HorizontalGroup):
 
-class VisualizerDisplay(Static):
+    def compose(self) -> ComposeResult:
+        yield VisualizerDisplay(id='analyze-low', feature='kick_signal')  # type: ignore
+        yield VisualizerDisplay(id='analyze-hi', feature='snare_signal', summary_function=max)  # type: ignore
+
+class VisualizerDisplay(Sparkline):
     """Displays analyzer results reactively."""
 
-    kick_signal = reactive("")
+    _max_points = 20
+    _data_points = []
 
     def __init__(self, **kwargs):
+        self.feature = kwargs.pop('feature')
         super().__init__(**kwargs)
-        self.app.analyzer.subscribe(self._on_result) # type: ignore
-        self.visualizer = SignalAnalyzer('kick_signal')
+        self._data_points = [0.0] * self._max_points
+        self.data = self._data_points
+        self.border_title = self.feature
+        self.app.analyzer.subscribe(self._on_result)  # type: ignore
 
     def _on_result(self, features) -> None:
-        self.visualizer.send(features)
-        self.kick_signal = self.visualizer.result
-
-    def watch_kick_signal(self, value: str) -> None:
-        self.update(value)
+        signal = features.get(self.feature, 0)
+        self._data_points = self._data_points[1:] + [float(signal)]
+        self.data = self._data_points
 
 
 class CoreOptionsControls(HorizontalGroup):

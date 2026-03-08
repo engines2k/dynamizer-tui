@@ -1,6 +1,21 @@
+Visualizers {
+	align: center middle;
+}
+
 VisualizerDisplay {
 	padding: 1;
-	border: dashed $boost;
+	border: dashed rgb(100, 100, 100);
+	color: $accent;
+	height: 8;
+	max-width: 50;
+}
+
+#analyze-low > .sparkline--max-color {
+	color: $warning;
+}
+
+#analyze-low > .sparkline--min-color {
+	color: $warning 30%;
 }
 
 CoreOptionsControls {
