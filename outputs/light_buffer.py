@@ -127,14 +127,13 @@ class LightBuffer:
         return LightBufferFrame(flattened)
 
     def calc_intensity(self, signal):
+        divisor = 125 #TODO: ITS MAGIC!
         # Apply threshold/adjustment to remove noise
-        adjusted_signal = max(signal + self.settings['adjust'], 1)
+        adjusted_signal = max(signal + self.settings.get('adjust', 0), 1)
+        adjusted_signal *= self.settings.get('multiplier', 1)
 
-        # Scale: divide first (larger divisor = weaker signal), then square for non-linear response
-        # multiplier works inversely here: smaller multiplier = divide by larger number = weaker
-        divisor = int(125 / self.settings['multiplier']) if self.settings['multiplier'] > 1 else 125
         scaled = adjusted_signal // divisor
-        intensity = scaled ** 2 + 1
+        intensity = scaled ** 2 + 1 #for a peakier signal
 
         return intensity
 

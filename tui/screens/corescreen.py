@@ -30,7 +30,7 @@ class CoreOptions(VerticalGroup):
 class Visualizers(HorizontalGroup):
 
     def compose(self) -> ComposeResult:
-        yield VisualizerDisplay(id='analyze-low', feature='kick_signal')  # type: ignore
+        yield VisualizerDisplay(id='analyze-low', feature='kick_harmony')  # type: ignore
         yield VisualizerDisplay(id='analyze-hi', feature='snare_signal', summary_function=max)  # type: ignore
 
 class VisualizerDisplay(Sparkline):
@@ -51,6 +51,7 @@ class VisualizerDisplay(Sparkline):
         signal = features.get(self.feature, 0)
         self._data_points = self._data_points[1:] + [float(signal)]
         self.data = self._data_points
+        self.border_subtitle = f"{float(signal):.2f}"
 
 
 class CoreOptionsControls(HorizontalGroup):

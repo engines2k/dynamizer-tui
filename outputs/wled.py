@@ -10,8 +10,8 @@ WLED_PORT = 21324
 LISTEN_TIMEOUT_SECONDS = 2
 
 LIGHT_SETTINGS_LOW = {
-    'multiplier': .1,
-    'adjust': 0,
+    'adjust': -1300,
+    'multiplier': .5,
     'color': (5, 255, 118), #BRG
     'speed': 6
 }
@@ -24,7 +24,7 @@ LIGHT_SETTINGS_LOW_BEAT = {
 }
 
 LIGHT_SETTINGS_HIGH = {
-    'multiplier': 6,
+    'multiplier': 1,
     'adjust': 0,
     'color': (100, 30, 15), #BRG
     'speed': 6
