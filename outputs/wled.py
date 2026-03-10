@@ -4,15 +4,15 @@ from .light_buffer import LightBuffer, LightDevice
 from .delayqueue import DelayQueue
 from typing import List
 
-OUTPUT_DELAY = 0 #130
-WLED_HOST = "wled-bfn.local"
+OUTPUT_DELAY = 0#220
+WLED_HOST = "4.3.2.1"
 WLED_PORT = 21324
 LISTEN_TIMEOUT_SECONDS = 2
 
 LIGHT_SETTINGS_LOW = {
-    'multiplier': .2,
+    'multiplier': .1,
     'adjust': 0,
-    'color': (2, 255, 255), #BRG
+    'color': (5, 255, 118), #BRG
     'speed': 6
 }
 
@@ -24,7 +24,7 @@ LIGHT_SETTINGS_LOW_BEAT = {
 }
 
 LIGHT_SETTINGS_HIGH = {
-    'multiplier': 4,
+    'multiplier': 6,
     'adjust': 0,
     'color': (100, 30, 15), #BRG
     'speed': 6
@@ -35,28 +35,29 @@ class WLEDClient:
         self.multiplier = 1.3
         self.host = WLED_HOST
         self.port = WLED_PORT
-        self._packet_queue = DelayQueue(delay=0)
+        self._packet_queue = DelayQueue(delay=OUTPUT_DELAY)
         self._active = False
         self._light_buffers: dict[str, LightBuffer] = {
-            'kick_signal': LightBuffer(n_frames=80, settings=LIGHT_SETTINGS_LOW),
-            'kick_beat': LightBuffer(n_frames=80, settings=LIGHT_SETTINGS_LOW_BEAT),
-            'snare_signal': LightBuffer(n_frames=60, settings=LIGHT_SETTINGS_HIGH),
+            'kick_harmony': LightBuffer(n_frames=104, settings=LIGHT_SETTINGS_LOW),
+            'kick_beat': LightBuffer(n_frames=104, settings=LIGHT_SETTINGS_LOW_BEAT),
+            'snare_signal': LightBuffer(n_frames=39, settings=LIGHT_SETTINGS_HIGH),
         }
 
         self.light_devices: List[LightDevice] = [
             LightDevice(
-                n_leds=100,
+                n_leds=144,
                 buffers=[
-                    (0, self._light_buffers['kick_signal']),
+                    (0, self._light_buffers['kick_harmony']),
                     (0, self._light_buffers['kick_beat']),
+                    (105, self._light_buffers['snare_signal']),
                 ]
             ),
             LightDevice(
-                n_leds=140,
+                n_leds=144,
                 buffers=[
-                    (0, self._light_buffers['kick_signal']),
+                    (0, self._light_buffers['kick_harmony']),
                     (0, self._light_buffers['kick_beat']),
-                    (80, self._light_buffers['snare_signal']),
+                    (105, self._light_buffers['snare_signal']),
                 ]
             )
         ]
