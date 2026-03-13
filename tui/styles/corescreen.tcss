@@ -1,0 +1,75 @@
+Visualizers {
+	align: center middle;
+}
+
+VisualizerDisplay {
+	padding: 1;
+	border: dashed rgb(100, 100, 100);
+	color: $accent;
+	height: 8;
+	max-width: 50;
+}
+
+#analyze-low {
+	margin: 0 2 0 0;
+}
+
+#analyze-low > .sparkline--max-color {
+	color: $warning;
+}
+
+#analyze-low > .sparkline--min-color {
+	color: $warning 30%;
+}
+
+CoreOptionsControls {
+	min-width: 50;
+	padding: 1;
+	align: center middle;
+	height: 10;
+}
+
+CoreOptionsControls Switch {
+	padding: 0 1;
+	height: 3;
+}
+
+CoreOptionsControls Select {
+	margin-left: 1;
+	height: 5;
+	width: 40;
+	border: solid $boost;
+	color: $text;
+}
+
+CoreOptionsControls Select:focus {
+	border: solid $accent;
+	color: $accent;
+}
+
+VolumeControl {
+	border: solid $boost;
+	align: center top;
+	padding-left: 1;
+	margin-top: 0;
+	margin-left: 1;
+	height: 3;
+	width: 49;
+	color: $text;
+}
+
+VolumeControl:focus, VolumeControl:focus-within {
+	border: solid $success;
+	color: $accent;
+}
+
+VolumeControl ProgressBar {
+}
+
+VolumeControl Button {
+	min-width: 2;
+	height: 1;
+	padding: 0;
+	border: none;
+	margin: 0 1;
+}

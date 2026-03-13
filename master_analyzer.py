@@ -1,12 +1,11 @@
 import time
-import re
-from typing import Dict
+from typing import List, Callable
 from analyzers import BeatHarmonySeparator
 import outputs
+from outputs.abstract_analyzer import AbstractAnalyzer
+from audio_connectors.jackconnector import JACKConnector
 from weightings import a_weighting
-from visualizers import  bass_beat, snare_beat
 from lookback import Lookback
-from audio_connectors import PAConnector
 import numpy as np
 from scipy.signal import ZoomFFT
 
@@ -19,19 +18,23 @@ class MasterAnalyzer():
     window_size = 4096
     hop_size = 64
     lookback_duration_ms = 40
+    min_callback_interval_ms = 33
     _active = False
 
     def __init__(self):
         self._failures = 0
         self._inbuffer = np.array([])  # Initialize as empty 1D array
         self._pause_processing = False
-        self.audio_connector = PAConnector(self._process_callback)
+        self._callbacks: List[Callable] = []
+        self._last_callback_time = 0.0
+        self.audio_connector = JACKConnector(self._process_callback)
         self.signal_lookback = Lookback(self.lookback_duration_ms, self.sample_rate, self.hop_size)
+        self._sensitivity = 1.0
 
         self._signal_windower = np.hanning(self.window_size)
         self._init_fft()
         self._init_outputs()
-        self._init_analyzers()
+        self._init_processors()
 
     def _init_fft(self):
         self.low_zoom_fft = ZoomFFT(self.window_size, [20, 100], 80, fs=self.sample_rate)
@@ -48,10 +51,16 @@ class MasterAnalyzer():
     def _init_outputs(self):
         self._outputs = {
             "wled": outputs.wled.WLEDClient(),
-            "terminalwave": outputs.SignalAnalyzer(),
+            "terminalwave": outputs.SignalAnalyzer('kick_signal'),
         }
 
-    def _init_analyzers(self):
+    def add_output(self, label: str, output: AbstractAnalyzer):
+        self._outputs[label] = output
+
+    def subscribe(self, callback: Callable) -> None:
+        self._callbacks.append(callback)
+
+    def _init_processors(self):
         self._analyzers = {
             'kick_beat_harmony': BeatHarmonySeparator(
                 self.signal_lookback,
@@ -62,9 +71,12 @@ class MasterAnalyzer():
                 beat_attack=100,
                 beat_decay=30
             ),
-            'snare_beat_harmony': BeatHarmonySeparator(self.signal_lookback, min_freq=3000, label='snare'),
+            'snare_beat_harmony': BeatHarmonySeparator(
+                self.signal_lookback,
+                min_freq=3000,
+                label='snare'
+            ),
         }
-
 
     @property 
     def active(self):
@@ -78,6 +90,10 @@ class MasterAnalyzer():
         for output in self._outputs.values():
             output.activate()
         self._active = True
+
+    def set_sensitivity(self, n_sense: float) -> float:
+        self._sensitivity = max(0, min(2, n_sense))
+        return self._sensitivity
 
     def _process_callback(self, n_frames: int) -> None:
         if not self._pause_processing:
@@ -93,9 +109,11 @@ class MasterAnalyzer():
             self._process_buffer_window()
 
     def _load_frames_into_buffer(self) -> None:
-        frames = self.audio_connector.get_buffer()  # Fixed: removed ._client
-        if frames is not None:
-            self._inbuffer = np.concatenate((self._inbuffer, frames))
+        frame = self.audio_connector.get_buffer()  # Fixed: removed ._client
+        if frame is not None:
+            frame = np.multiply(self._sensitivity, frame)
+            self._inbuffer = np.concatenate((self._inbuffer, frame))
+
 
     def _buffer_ready(self):
         return len(self._inbuffer) >= self.window_size + self.hop_size
@@ -105,7 +123,7 @@ class MasterAnalyzer():
         self._inbuffer = self._inbuffer[self.hop_size:]
         freqs = self._analyze_signal_window(window)
         features = self._analyze_freqs_features(freqs)
-        self._output_result(freqs, features)
+        self._output_result(features)
         self.signal_lookback.push(freqs)
 
     def _analyze_signal_window(self, x):
@@ -116,9 +134,9 @@ class MasterAnalyzer():
 
     def _analyze_freqs_features(self, freqs):
         features = {}
-        for analyzer in self._analyzers:
-            feature = self._analyzers[analyzer].analyze(self._freq_bins, freqs)
-            features.update(feature)
+        for analyzer in self._analyzers.values():
+            feature_set = analyzer.analyze(self._freq_bins, freqs)
+            features.update(feature_set)
         return features
 
     def _apply_window_function(self, x):
@@ -137,14 +155,14 @@ class MasterAnalyzer():
         freqs = np.clip(freqs, a_min=0, a_max=None)
         return freqs
 
-    def _output_result(self, freqs, features):
-        bins = self._freq_bins
-        bass = bass_beat(bins, freqs)
-        snare = snare_beat(bins, freqs)
-        kick = features.get('kick_beat', 0)  # Use .get() to avoid KeyError
-        self._outputs['wled'].send(bass, snare, kick)
-        print(features)
-        #self._outputs.terminalwave.send(snare)
+    def _output_result(self, features):
+        current_time = time.time() * 1000
+        for output in self._outputs.values():
+            output.send(features)
+        if current_time - self._last_callback_time >= self.min_callback_interval_ms:
+            self._last_callback_time = current_time
+            for callback in self._callbacks:
+                callback(features)
 
     def _calc_amp_avg(self, frames):
         return np.average(np.average(frames, axis=1))

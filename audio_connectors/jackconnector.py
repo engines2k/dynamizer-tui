@@ -1,7 +1,8 @@
 import os
-from unittest import result
+import re
 import jack
 from dotenv import load_dotenv
+from typing import Dict
 
 
 from .abstractconnector import AbstractConnector
@@ -62,10 +63,34 @@ class JACKConnector(AbstractConnector):
         self._client.deactivate()
 
 
+    def get_available_ports(self) -> Dict[str, str]:
+        result = {}
+        ports = self._client.get_ports(is_midi=False)
+        valid_ports = [ port for port in ports if self.valid_outport(port) ]
+        for port in valid_ports:
+            result[self._pretty_port_name(port.name)] = port.name[:-3]
+        return result
+        
+
+    @staticmethod
+    def _pretty_port_name(pretty: str) -> str:
+        pretty = re.sub(r':(monitor|output)_\w\w', "", pretty)
+        return pretty
+
+    @staticmethod
+    def valid_outport(port: jack.Port):
+        if ('capture' in port.name or 'playback' in port.name) or ('FL' not in port.name):
+            return False
+        return True
+
     def _connect_input(self):
         if self._input:
-            self._client.connect(f'{self._input}_FL', "Visualizer:left")
-            self._client.connect(f'{self._input}_FR', "Visualizer:right")
+            try:
+                self._client.connect(f'{self._input}_FR', "Visualizer:right")
+                self._client.connect(f'{self._input}_FL', "Visualizer:left")
+            except jack.JackErrorCode as e:
+                if "already exists" not in str(e):
+                    print(f"Warning: Could not connect to input '{self._input}': {e}")
 
 
     def _disconnect_input(self):

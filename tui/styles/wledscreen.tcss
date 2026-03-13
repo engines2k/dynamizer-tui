@@ -1,0 +1,4 @@
+WLEDOptions {
+   layout: horizontal;
+}
+

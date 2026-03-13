@@ -1,4 +1,26 @@
 from collections import deque
+from typing import List, Tuple
+
+class LightDevice():
+    def __init__(self, n_leds, buffers: List[Tuple[int, LightBuffer]]=[]):
+        self._n_leds = n_leds
+        self._buffers: List[Tuple[int, LightBuffer]] = buffers
+
+    @property
+    def n_leds(self):
+        return self._n_leds
+
+    def set_n_leds(self, n_leds):
+        self._n_leds = n_leds
+
+    def build_payload(self):
+        if self._buffers is None:
+            return []
+        result = LightBufferFrame([1] * (self._n_leds * 3))
+        for position, buffer in self._buffers:
+            result = result.place(buffer.frame, position)
+        return result
+
 
 class LightBufferFrame:
     def __init__(self, frame=[]):
@@ -19,29 +41,51 @@ class LightBufferFrame:
     def __len__(self):
         return len(self._frame)
 
-    def __add__(self, other):
+    def __add__(self, other, offset=0):
         added = []
         i = 0
+        offset *= 3 # R, G, B
 
-        while i < len(self) and i < len(other):
-            tmp = self[i] + other[i] - 1
-            tmp = max(min(tmp, 255), 0)
+        while i < len(self) and i+offset < len(other):
+            tmp = self[i] + other[i+offset] - 1
+            tmp = max(min(tmp, 255), 1)
             added.append(tmp)
             i += 1
         if i < len(self):
-            added.append(self[i:])
-        if i < len(other):
-            added.append(other[i:])
+            added.extend(self[i:])
+        if i+offset < len(other):
+            added.extend(other[i+offset:])
 
-        return added
+        return LightBufferFrame(added)
+
+    def place(self, other, led_offset=0, blend=True):
+        offset = led_offset * 3
+        result = list(self._frame)
+        for i, val in enumerate(other._frame):
+            pos = offset + i
+            if pos < len(result):
+                if blend:
+                    result[pos] = max(1, min(255, result[pos] + val - 1))
+                else:
+                    result[pos] = max(1, min(255, val))
+        return LightBufferFrame(result)
 
 class LightBuffer:
-    def __init__(self, num_leds, settings):
-        self.buffer = deque(maxlen=num_leds)
+    def __init__(self, n_frames, settings):
+        self._n_frames = n_frames
+        self.buffer = deque(maxlen=self._n_frames)
         self.settings = settings
         self.frame = LightBufferFrame()
 
-    def _handle_signal(self, signal):
+    @property
+    def size(self):
+        return self._n_frames
+
+    def set_size(self, n_frames: int):
+        self._n_frames = n_frames
+        self.buffer = deque(maxlen=self._n_frames)
+
+    def handle_signal(self, signal):
         intensity = self.calc_intensity(signal)
         blended_intensities = self._blend_signal(intensity)
         self.buffer.extendleft(blended_intensities)
@@ -50,7 +94,8 @@ class LightBuffer:
     def _blend_signal(self, intensity):
         result = []
         prev_value = self.buffer[0] if len(self.buffer) > 0 else [1, 1, 1]
-        target_value = [ min(intensity, channel) for channel in self.settings['color'] ]
+        multiplier = self.settings.get('multiplier', 1.0)
+        target_value = [ min(intensity, int(channel * multiplier)) for channel in self.settings['color'] ]
         for i in range(self.settings['speed']):
             blend = (i + 1) / self.settings['speed']
             blended = [
@@ -60,36 +105,35 @@ class LightBuffer:
             result.append(blended)
         return result
 
-    def _build_frame(self, num_leds=50):
+    def _build_frame(self):
         """Build a frame with specified number of LEDs (default 50).
         Takes half the LEDs, mirrors them to create the full strip pattern."""
         buffer_list = list(self.buffer)
-        half_leds = num_leds // 2
+        half_leds = self._n_frames // 2
         num_items = min(len(buffer_list), half_leds)
 
         frame = buffer_list[:num_items]
 
         # Pad to half the strip length
         if num_items < half_leds:
-            frame.extend([[0, 0, 0]] * (half_leds - num_items))
+            frame.extend([[1, 1, 1]] * (half_leds - num_items))
 
         # Mirror: reverse and extend to create full strip
         frame.reverse()
         frame.extend(reversed(frame))
 
         # Clamp all values to valid byte range [0, 255] before flattening
-        flattened: list[int] = [ max(0, min(255, c)) for sublist in frame for c in sublist ]
+        flattened: list[int] = [ max(1, min(255, c)) for sublist in frame for c in sublist ]
         return LightBufferFrame(flattened)
 
     def calc_intensity(self, signal):
+        divisor = 125 #TODO: ITS MAGIC!
         # Apply threshold/adjustment to remove noise
-        adjusted_signal = max(signal + self.settings['adjust'], 0)
+        adjusted_signal = max(signal + self.settings.get('adjust', 0), 1)
+        adjusted_signal *= self.settings.get('multiplier', 1)
 
-        # Scale: divide first (larger divisor = weaker signal), then square for non-linear response
-        # multiplier works inversely here: smaller multiplier = divide by larger number = weaker
-        divisor = int(125 / self.settings['multiplier']) if self.settings['multiplier'] > 0 else 125
         scaled = adjusted_signal // divisor
-        intensity = scaled ** 2 + 1
+        intensity = scaled ** 2 + 1 #for a peakier signal
 
         return intensity
 

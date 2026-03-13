@@ -1,69 +1,41 @@
-from textual import on
 from textual.app import App, ComposeResult
 from textual.widgets import Footer, Static, Switch, ProgressBar, Select
 from textual.containers import HorizontalGroup, VerticalGroup
+from textual.widgets import Static
 from master_analyzer import masteranalyzer, MasterAnalyzer
+from tui.screens import CORE, WLED
 
 
 class DynamizerApp(App):
     """An app for realtime music visualization."""
     analyzer: MasterAnalyzer = masteranalyzer
 
-    CSS_PATH = "tui/styles.tcss"
+    BINDINGS = [
+        ('ctrl+z', 'core_screen', 'CORE'),
+        ('ctrl+x', 'wled_screen', 'WLED'),
+    ]
 
-    def compose(self) -> ComposeResult:
-        yield CoreOptions()
-        yield Footer()
+    CSS_PATH = "tui/styles/style.tcss"
 
-class CoreOptions(VerticalGroup):
-    """Core options plus status bar"""
+    SCREENS = {
+        'CORE': CORE,
+        'WLED': WLED,
+    }
 
-    ASCII_ART = " ▌         𝅘𝅥      \n▛▌▌▌▛▌▀▌▛▛▌▌▀▌█▌▛▘\n▙▌▙▌▌▌█▌▌▌▌▌▙▖▙▖▌ \n⸱⸱▄▌⸱•⦁●⦁••⸱⸱⸱⸱⸱⸱⸱"
 
-    def compose(self) -> ComposeResult:
-        yield Static(self.ASCII_ART, id='ascii-art')
-        yield CoreOptionsControls(self)
-        yield Static("Status text here", id='status')
+    def action_core_screen(self):
+        self.switch_screen('CORE')
 
-class CoreOptionsControls(HorizontalGroup):
-    """Selector for input(s) into analyzer."""
+    def action_wled_screen(self):
+        self.switch_screen('WLED')
 
-    def __init__(self, parent):
+    def __init__(self):
         super().__init__()
-        self._parent = parent
         self._port_options = self.app.analyzer.audio_connector.inputs # type: ignore
 
-    BINDINGS = [('x', 'activate_analyzer', "activate")]
+    def on_mount(self):
+        self.push_screen('CORE')
 
-    def compose(self) -> ComposeResult:
-        yield Switch()
-        yield ProgressBar(total=50, show_eta=False)
-        yield Select(options=self._port_options.items())
-
-    @on(Switch.Changed)
-    def toggle_analyzer(self, event: Switch.Changed):
-        if event.value == False:
-            self._update_status('Dynamizer core paused')
-            self.app.analyzer.toggle_pause() #type: ignore
-
-        elif self.app.analyzer.active: #type: ignore
-            self.app.analyzer.toggle_pause() #type: ignore
-            self._update_status('Dynamizer core resumed')
-
-        else:
-            self._update_status('Dynamizer core ON')
-            self.app.analyzer.activate()  # type: ignore
-
-    @on(Select.Changed)
-    def switch_analyzer_input(self, event: Select.Changed):
-        self.app.analyzer.audio_connector.change_input(event.value) # type: ignore
-
-    def _update_status(self, n_status: str) -> None:
-        self._parent.query_one("#status", Static).update(n_status)
-
-    def action_activate_analyzer(self) -> None:
-        """Release the beast."""
-        print("ACTIVATE!")
 
 if __name__ == "__main__":
     app = DynamizerApp()
