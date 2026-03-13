@@ -1,13 +1,12 @@
 import time
 import re
 from typing import Dict
-from jack import Port
 from analyzers import BeatHarmonySeparator
 import outputs
 from weightings import a_weighting
 from visualizers import  bass_beat, snare_beat
 from lookback import Lookback
-from audio_connectors import JACKConnector
+from audio_connectors import SDConnector
 import numpy as np
 from scipy.signal import ZoomFFT
 
@@ -24,9 +23,9 @@ class MasterAnalyzer():
 
     def __init__(self):
         self._failures = 0
-        self._inbuffer = np.ndarray(1)
+        self._inbuffer = np.array([])  # Initialize as empty 1D array
         self._pause_processing = False
-        self.audio_connector = JACKConnector(self._process_callback)
+        self.audio_connector = SDConnector(self._process_callback)
         self.signal_lookback = Lookback(self.lookback_duration_ms, self.sample_rate, self.hop_size)
 
         self._signal_windower = np.hanning(self.window_size)
@@ -66,25 +65,6 @@ class MasterAnalyzer():
             'snare_beat_harmony': BeatHarmonySeparator(self.signal_lookback, min_freq=3000, label='snare'),
         }
 
-    def get_available_ports(self) -> Dict[str, str]:
-        result = {}
-        ports = self.audio_connector.available_ports
-        valid_ports = [ port for port in ports if self.valid_outport(port) ]
-        for port in valid_ports:
-            result[self._pretty_port_name(port.name)] = port.name[:-3]
-        return result
-        
-
-    @staticmethod
-    def _pretty_port_name(pretty: str) -> str:
-        pretty = re.sub(r':(monitor|output)_\w\w', "", pretty)
-        return pretty
-
-    @staticmethod
-    def valid_outport(port: Port):
-        if ('capture' in port.name or 'playback' in port.name) or ('FL' not in port.name):
-            return False
-        return True
 
     @property 
     def active(self):
@@ -113,9 +93,9 @@ class MasterAnalyzer():
             self._process_buffer_window()
 
     def _load_frames_into_buffer(self) -> None:
-        inputs = self.audio_connector.inputs
-        frame = inputs[0].get_array() # type: ignore
-        self._inbuffer = np.concatenate((self._inbuffer, frame))
+        frames = self.audio_connector.get_buffer()  # Fixed: removed ._client
+        if frames is not None:
+            self._inbuffer = np.concatenate((self._inbuffer, frames))
 
     def _buffer_ready(self):
         return len(self._inbuffer) >= self.window_size + self.hop_size
@@ -125,7 +105,6 @@ class MasterAnalyzer():
         self._inbuffer = self._inbuffer[self.hop_size:]
         freqs = self._analyze_signal_window(window)
         features = self._analyze_freqs_features(freqs)
-        #print(features)
         self._output_result(freqs, features)
         self.signal_lookback.push(freqs)
 
@@ -162,8 +141,9 @@ class MasterAnalyzer():
         bins = self._freq_bins
         bass = bass_beat(bins, freqs)
         snare = snare_beat(bins, freqs)
-        kick = features['kick_beat']
+        kick = features.get('kick_beat', 0)  # Use .get() to avoid KeyError
         self._outputs['wled'].send(bass, snare, kick)
+        print(features)
         #self._outputs.terminalwave.send(snare)
 
     def _calc_amp_avg(self, frames):
@@ -193,7 +173,7 @@ class MasterAnalyzer():
             print("Dynamizer falling behind! Attempting recovery by clearing buffer.")
             self._failures += 1
         self.toggle_pause()
-        self._inbuffer = np.ndarray(1)
+        self._inbuffer = np.array([])  # Reset to empty 1D array
         time.sleep(.5)
         self.toggle_pause()
 
