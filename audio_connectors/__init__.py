@@ -1,4 +1,4 @@
 #from .jackconnector import JACKConnector
-from .sdconnector import SDConnector
+from .paconnector import PAConnector
 
-__all__ = ['JACKConnector', 'SDConnector']
+__all__ = ['JACKConnector', 'PAConnector']

@@ -6,7 +6,7 @@ import outputs
 from weightings import a_weighting
 from visualizers import  bass_beat, snare_beat
 from lookback import Lookback
-from audio_connectors import SDConnector
+from audio_connectors import PAConnector
 import numpy as np
 from scipy.signal import ZoomFFT
 
@@ -25,7 +25,7 @@ class MasterAnalyzer():
         self._failures = 0
         self._inbuffer = np.array([])  # Initialize as empty 1D array
         self._pause_processing = False
-        self.audio_connector = SDConnector(self._process_callback)
+        self.audio_connector = PAConnector(self._process_callback)
         self.signal_lookback = Lookback(self.lookback_duration_ms, self.sample_rate, self.hop_size)
 
         self._signal_windower = np.hanning(self.window_size)

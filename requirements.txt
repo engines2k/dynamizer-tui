@@ -4,4 +4,4 @@ scipy
 dotenv
 textual
 textual-dev
-sounddevice
+pyaudiowpatch
