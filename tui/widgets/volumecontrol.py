@@ -7,9 +7,10 @@ from textual.reactive import reactive
 class VolumeControl(HorizontalGroup):
     value = reactive(100)
 
-    def __init__(self, total: int = 100, **kwargs):
+    def __init__(self, total: int = 200, **kwargs):
         super().__init__(**kwargs)
         self.total = total
+        self._sensitivity = 1.0
 
     def compose(self) -> ComposeResult:
         yield ProgressBar(total=self.total, show_eta=False, id='volume-bar')
@@ -21,7 +22,8 @@ class VolumeControl(HorizontalGroup):
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == 'increment':
-            self.value = min(self.value + 10, self.total)
+            self._sensitivity = self.app.analyzer.set_sensitivity(self._sensitivity + 0.1)
         elif event.button.id == 'decrement':
-            self.value = max(self.value - 10, 0)
+            self._sensitivity = self.app.analyzer.set_sensitivity(self._sensitivity - 0.1)
+        self.value = int(self._sensitivity * 100)
         self.query_one('#volume-bar', ProgressBar).advance(10 if event.button.id == 'increment' else -10)

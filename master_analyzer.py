@@ -29,6 +29,7 @@ class MasterAnalyzer():
         self._last_callback_time = 0.0
         self.audio_connector = AudioConnector(self._process_callback)
         self.signal_lookback = Lookback(self.lookback_duration_ms, self.sample_rate, self.hop_size)
+        self._sensitivity = 1.0
 
         self._signal_windower = np.hanning(self.window_size)
         self._init_fft()
@@ -90,6 +91,10 @@ class MasterAnalyzer():
             output.activate()
         self._active = True
 
+    def set_sensitivity(self, n_sense: float) -> float:
+        self._sensitivity = max(0, min(2, n_sense))
+        return self._sensitivity
+
     def _process_callback(self, n_frames: int) -> None:
         if not self._pause_processing:
             self._process_frames(n_frames)
@@ -106,6 +111,7 @@ class MasterAnalyzer():
     def _load_frames_into_buffer(self) -> None:
         inports = self.audio_connector.inports
         frame = inports[0].get_array() # type: ignore
+        frame = np.multiply(self._sensitivity, frame)
         self._inbuffer = np.concatenate((self._inbuffer, frame))
 
     def _buffer_ready(self):

@@ -13,14 +13,14 @@ LIGHT_SETTINGS_LOW = {
     'adjust': -1300,
     'multiplier': .5,
     'color': (5, 255, 118), #BRG
-    'speed': 6
+    'speed': 8
 }
 
 LIGHT_SETTINGS_LOW_BEAT = {
     'multiplier': .071,
     'adjust': 0,
-    'color': (12, 255, 80), #BRG 
-    'speed': 5
+    'color': (255, 255, 255), #BRG 
+    'speed': 8
 }
 
 LIGHT_SETTINGS_HIGH = {
@@ -38,9 +38,9 @@ class WLEDClient:
         self._packet_queue = DelayQueue(delay=OUTPUT_DELAY)
         self._active = False
         self._light_buffers: dict[str, LightBuffer] = {
-            'kick_harmony': LightBuffer(n_frames=104, settings=LIGHT_SETTINGS_LOW),
-            'kick_beat': LightBuffer(n_frames=104, settings=LIGHT_SETTINGS_LOW_BEAT),
-            'snare_signal': LightBuffer(n_frames=39, settings=LIGHT_SETTINGS_HIGH),
+            'kick_harmony': LightBuffer(n_frames=110, settings=LIGHT_SETTINGS_LOW),
+            'kick_beat': LightBuffer(n_frames=110, settings=LIGHT_SETTINGS_LOW_BEAT),
+            'snare_signal': LightBuffer(n_frames=30, settings=LIGHT_SETTINGS_HIGH),
         }
 
         self.light_devices: List[LightDevice] = [
@@ -49,7 +49,7 @@ class WLEDClient:
                 buffers=[
                     (0, self._light_buffers['kick_harmony']),
                     (0, self._light_buffers['kick_beat']),
-                    (105, self._light_buffers['snare_signal']),
+                    (113, self._light_buffers['snare_signal']),
                 ]
             ),
             LightDevice(
@@ -57,7 +57,7 @@ class WLEDClient:
                 buffers=[
                     (0, self._light_buffers['kick_harmony']),
                     (0, self._light_buffers['kick_beat']),
-                    (105, self._light_buffers['snare_signal']),
+                    (113, self._light_buffers['snare_signal']),
                 ]
             )
         ]
