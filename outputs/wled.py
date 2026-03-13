@@ -2,7 +2,9 @@
 import socket
 import time
 from .light_buffer import LightBuffer
+from collections import deque
 
+OUTPUT_DELAY = 0 #130
 WLED_HOST = "wled-bfn.local"
 WLED_PORT = 21324
 LISTEN_TIMEOUT_SECONDS = 2
@@ -65,7 +67,7 @@ class WLEDClient:
 
         self.host = WLED_HOST
         self.port = WLED_PORT
-        self._packet_queue = DelayQueue(delay=130)
+        self._packet_queue = DelayQueue(delay=0)
 
         self._light_buffers: dict[str, LightBuffer] = {
             'low': LightBuffer(num_leds=50, settings=LIGHT_SETTINGS_LOW),
@@ -73,13 +75,13 @@ class WLEDClient:
             'low_beat': LightBuffer(num_leds=50, settings=LIGHT_SETTINGS_LOW_BEAT)
         }
         
-        self._socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self._socket.setblocking(False)
-        
         self._max_send_rate_hz = 250
         self._min_send_interval = 1.0 / self._max_send_rate_hz
         self._last_send_time = 0
 
+    def activate(self):
+        self._socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self._socket.setblocking(False)
         self._resolve_address()
 
     def _resolve_address(self):

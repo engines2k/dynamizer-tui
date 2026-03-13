@@ -1,0 +1,75 @@
+import os
+from unittest import result
+import jack
+from dotenv import load_dotenv
+
+
+from .abstractconnector import AbstractConnector
+
+load_dotenv()
+
+class JACKConnector(AbstractConnector):
+    def __init__(self, process_callback) -> None:
+        self._client = jack.Client("Visualizer")
+        self._client.inports.register("left")
+        self._client.inports.register("right")
+        self._client.set_process_callback(process_callback)
+        self._client.set_shutdown_callback(self._shutdown_callback)
+        self._input = os.getenv('DEFAULT_INPUT') or ""
+        self.active = False
+
+    def get_buffer(self):        
+        frame = self._client.inports[0].get_array()
+        return frame
+
+    @staticmethod
+    def _shutdown_callback(status, reason):
+        print("JACK shutdown:", status, reason)
+
+
+    @property
+    def inputs(self):
+        valid_ports = [ port for port in self._client.get_ports(is_midi=False) if self.valid_inport(port) ]
+        return { self._pretty_port_name(port.name): port.name[:-3] for port in valid_ports }
+    
+
+    @staticmethod
+    def _pretty_port_name(pretty: str) -> str:
+        pretty = re.sub(r':(monitor|output)_\w\w', "", pretty)
+        return pretty
+
+    @staticmethod
+    def valid_inport(port: jack.Port):
+        if ('capture' in port.name or 'playback' in port.name) or ('FL' not in port.name):
+            return False
+        return True
+
+    def activate(self):
+        self._client.activate()
+        self._connect_input()
+        self.active = True
+
+
+    def change_input(self, input):
+        if self.active:
+            self._disconnect_input()
+        self._input = input
+        if self.active:
+            self._connect_input()
+
+
+    def deactivate(self):
+        self._client.deactivate()
+
+
+    def _connect_input(self):
+        if self._input:
+            self._client.connect(f'{self._input}_FL', "Visualizer:left")
+            self._client.connect(f'{self._input}_FR', "Visualizer:right")
+
+
+    def _disconnect_input(self):
+        for inport in self._client.inports:
+            for connection in self._client.get_all_connections(inport):
+                self._client.disconnect(connection, inport)
+
