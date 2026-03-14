@@ -5,21 +5,21 @@ from .delayqueue import DelayQueue
 from typing import List
 
 OUTPUT_DELAY = 0#220
-WLED_HOST = "4.3.2.1"
+WLED_HOST = "wled-bfn.local"
 WLED_PORT = 21324
 LISTEN_TIMEOUT_SECONDS = 2
 
 LIGHT_SETTINGS_LOW = {
-    'adjust': -1300,
+    'adjust': -1000,
     'multiplier': .5,
-    'color': (5, 255, 118), #BRG
+    'color': (1, 200, 78), #BRG
     'speed': 8
 }
 
 LIGHT_SETTINGS_LOW_BEAT = {
-    'multiplier': .071,
+    'multiplier': 71,
     'adjust': 0,
-    'color': (255, 255, 255), #BRG 
+    'color': (255, 25, 0), #BRG 
     'speed': 8
 }
 

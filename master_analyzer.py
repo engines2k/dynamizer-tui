@@ -123,6 +123,7 @@ class MasterAnalyzer():
         self._inbuffer = self._inbuffer[self.hop_size:]
         freqs = self._analyze_signal_window(window)
         features = self._analyze_freqs_features(freqs)
+        print(features)
         self._output_result(features)
         self.signal_lookback.push(freqs)
 
