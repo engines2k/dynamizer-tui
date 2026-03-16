@@ -1,27 +1,6 @@
 from collections import deque
 from typing import List, Tuple
 
-class LightDevice():
-    def __init__(self, n_leds, buffers: List[Tuple[int, LightBuffer]]=[]):
-        self._n_leds = n_leds
-        self._buffers: List[Tuple[int, LightBuffer]] = buffers
-
-    @property
-    def n_leds(self):
-        return self._n_leds
-
-    def set_n_leds(self, n_leds):
-        self._n_leds = n_leds
-
-    def build_payload(self):
-        if self._buffers is None:
-            return []
-        result = LightBufferFrame([1] * (self._n_leds * 3))
-        for position, buffer in self._buffers:
-            result = result.place(buffer.frame, position)
-        return result
-
-
 class LightBufferFrame:
     def __init__(self, frame=[]):
         self._frame = frame
@@ -138,3 +117,22 @@ class LightBuffer:
         return intensity
 
 
+class LightDevice():
+    def __init__(self, n_leds, buffers: List[Tuple[int, LightBuffer]]=[]):
+        self._n_leds = n_leds
+        self._buffers: List[Tuple[int, LightBuffer]] = buffers
+
+    @property
+    def n_leds(self):
+        return self._n_leds
+
+    def set_n_leds(self, n_leds):
+        self._n_leds = n_leds
+
+    def build_payload(self):
+        if self._buffers is None:
+            return []
+        result = LightBufferFrame([1] * (self._n_leds * 3))
+        for position, buffer in self._buffers:
+            result = result.place(buffer.frame, position)
+        return result

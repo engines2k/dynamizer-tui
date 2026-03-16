@@ -5,7 +5,7 @@ from .delayqueue import DelayQueue
 from typing import List
 
 OUTPUT_DELAY = 0#220
-WLED_HOST = "4.3.2.1"
+WLED_HOST = "wled-bfn.local"
 WLED_PORT = 21324
 LISTEN_TIMEOUT_SECONDS = 2
 

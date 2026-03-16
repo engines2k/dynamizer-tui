@@ -3,7 +3,7 @@ from typing import List, Callable
 from analyzers import BeatHarmonySeparator
 import outputs
 from outputs.abstract_analyzer import AbstractAnalyzer
-from audio_connectors.jackconnector import JACKConnector
+from audio_connectors import PAConnector
 from weightings import a_weighting
 from lookback import Lookback
 import numpy as np
@@ -27,7 +27,7 @@ class MasterAnalyzer():
         self._pause_processing = False
         self._callbacks: List[Callable] = []
         self._last_callback_time = 0.0
-        self.audio_connector = JACKConnector(self._process_callback)
+        self.audio_connector = PAConnector(self._process_callback)
         self.signal_lookback = Lookback(self.lookback_duration_ms, self.sample_rate, self.hop_size)
         self._sensitivity = 1.0
 
