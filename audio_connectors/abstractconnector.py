@@ -28,7 +28,7 @@ class AbstractConnector(ABC):
         pass
 
     @abstractmethod
-    def get_buffers(self):        
+    def get_buffers(self) -> List:
         '''Gets the channel buffers of audio frames.'''
         pass
 

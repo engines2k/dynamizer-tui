@@ -50,9 +50,8 @@ class JACKConnector(AbstractConnector):
             self._connect_input()
 
 
-    def get_buffers(self):        
-        frame = self._client.inports[0].get_array()  # type: ignore[attr-defined]
-        return frame
+    def get_buffers(self):
+        return [ inport.get_array() for inport in self._client.inports ] # type: ignore[attr-defined]
 
 
     def deactivate(self):
