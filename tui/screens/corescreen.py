@@ -60,15 +60,14 @@ class CoreOptionsControls(HorizontalGroup):
     def __init__(self, parent):
         super().__init__()
         self._parent = parent
-        self._port_options = self.app.analyzer.audio_connector.get_available_ports() # type: ignore
+        self._port_options = self.app.analyzer.audio_connector.get_inputs() # type: ignore
 
 
     def compose(self) -> ComposeResult:
-        input_items = self._port_options.items()
-        first_value = list(self._port_options.values())[0] if self._port_options else None
+        input_items = self._port_options
         power_switch = Switch(id="power")
         power_switch.border_subtitle = '⏻'
-        input_select = Select(options=input_items, value=first_value)
+        input_select = Select(options=[(i, i) for i in input_items], value=input_items[0])
         input_select.border_title = 'audio src'
         volume_control = VolumeControl(total=200)
         volume_control.border_subtitle = 'sensitivity'
@@ -94,7 +93,7 @@ class CoreOptionsControls(HorizontalGroup):
 
     @on(Select.Changed)
     def switch_analyzer_input(self, event: Select.Changed):
-        self.app.analyzer.audio_connector.change_input(event.value) # type: ignore
+        self.app.analyzer.audio_connector.switch_input(event.value) # type: ignore
 
     def _update_status(self, n_status: str) -> None:
         self._parent.query_one("#status", Static).update(n_status)

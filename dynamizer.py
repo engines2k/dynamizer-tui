@@ -31,7 +31,7 @@ class DynamizerApp(App):
 
     def __init__(self):
         super().__init__()
-        self._port_options = self.app.analyzer.audio_connector.inputs # type: ignore
+        self._port_options = self.app.analyzer.audio_connector.get_inputs() # type: ignore
 
     def on_mount(self):
         self.push_screen('CORE')

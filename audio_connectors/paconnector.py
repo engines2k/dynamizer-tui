@@ -2,137 +2,87 @@ import pyaudiowpatch as pyaudio
 import numpy as np
 import threading
 import time
-from typing import Dict
-
+from typing import Dict, List, Callable, Optional, Any
 from .abstractconnector import AbstractConnector
 
+
 class PAConnector(AbstractConnector):
-    def __init__(self, process_callback) -> None:
-        '''Initialize PyAudioWPatch connector with WASAPI loopback support'''
-        self._process_callback = process_callback
-        self._active_input = None
-        self._pa_stream = None
-        self._pyaudio_instance = None
-        self._buffer = None
+    
+    def __init__(self, process_callback: Callable):
+        super().__init__()
+        
+        self.channel_config = None
+        self.active = False
+
         self._sample_rate = 44100
         self._buffer_size = 1024
-        self.active = False
+        self._channels = 2
+        self._process_callback = process_callback
+        self._pyaudio_instance = pyaudio.PyAudio()
+        self._stream: Optional[pyaudio.Stream] = None
+        self._lock = threading.Lock()
+        self._buffers: List[np.ndarray] = []
+        self._active_input: Optional[int] = None
+        self._current_input_name: Optional[str] = None
+        self._subscribers: List[Callable] = []
+        self._audio_devices = self._find_audio_devices()
+    
+    def subscribe(self, callback: Callable) -> None:
+        if callback not in self._subscribers:
+            self._subscribers.append(callback)
+    
+    def get_inputs(self) -> List[str]:
+        return list(self._audio_devices.keys())
+    
+    def switch_input(self, input_name: str) -> None:
+        if input_name not in self._audio_devices:
+            raise ValueError(f"Input device '{input_name}' not found")
+            
+        if self.active:
+            self._disconnect_input()
         
-        # Get available loopback devices
-        self._loopback_devices = self._find_loopback_devices()
-
-    @property
-    def inputs(self) -> Dict[str, str]:
-        '''List all valid WASAPI loopback devices as a dictionary of {pretty_name: device_index}.'''
-        return self._loopback_devices
-
+        self._active_input = self._audio_devices[input_name]
+        self._current_input_name = input_name
+        
+        if self.active:
+            self._connect_input()
+        
+        self._publish_input_switch()
+    
     def activate(self) -> None:
-        '''Activate the connector to start WASAPI loopback recording.'''
-        if not self._loopback_devices:
-            print("No WASAPI loopback devices available!")
-            print("PyAudioWPatch couldn't find any loopback endpoints.")
-            return
-            
-        # Auto-select first available loopback device if none selected
+        if not self._audio_devices:
+            raise RuntimeError("No audio input devices available")
         if self._active_input is None:
-            first_device_name = list(self._loopback_devices.keys())[0]
-            self._active_input = self._loopback_devices[first_device_name]
-            print(f"Auto-selected loopback device: {first_device_name}")
-            
+            first_device_name = list(self._audio_devices.keys())[0]
+            self._active_input = self._audio_devices[first_device_name]
+            self._current_input_name = first_device_name
         self._connect_input()
         self.active = True
-
+    
     def deactivate(self) -> None:
-        '''Stop processing signal.'''
         self._disconnect_input()
         self.active = False
-
-    def get_buffer(self):
-        '''Get the current buffer of audio frames.'''
-        return self._buffer
-
-    def change_input(self, input_device) -> None:
-        '''Change the active input device for loopback recording.'''
-        was_active = self.active
-        if was_active:
-            self.deactivate()
-        self._active_input = input_device
-        if was_active:
-            self.activate()
-
-    def _find_loopback_devices(self) -> Dict[str, str]:
-        '''Find available WASAPI loopback devices using PyAudioWPatch.'''
-        loopback_devices = {}
+    
+    def _connect_input(self) -> None:
+        if self._active_input is None:
+            raise RuntimeError("No audio device selected")
         
         try:
-            print("Searching for WASAPI loopback devices with PyAudioWPatch...")
-            
-            with pyaudio.PyAudio() as p:
-                print("\\n=== ALL DEVICES ===")
-                for i in range(p.get_device_count()):
-                    dev = p.get_device_info_by_index(i)
-                    print(f"[{i}] {dev['name']} | in:{dev['maxInputChannels']} out:{dev['maxOutputChannels']} | hostApi:{dev['hostApi']}")
-                
-                print("\\n=== WASAPI LOOPBACK DEVICES ===")
-                try:
-                    wasapi_info = p.get_host_api_info_by_type(pyaudio.paWASAPI)
-                    print(f"WASAPI Host API found: {wasapi_info['name']}")
-                    
-                    for i in range(p.get_device_count()):
-                        dev = p.get_device_info_by_index(i)
-                        
-                        # Check if this is a loopback device
-                        if dev.get("isLoopbackDevice", False):
-                            device_name = dev['name']
-                            loopback_devices[device_name] = i
-                            print(f"[{i}] Found WASAPI loopback: {device_name}")
-                        
-                        # Also check for WASAPI devices that might be loopback-capable 
-                        elif (dev['hostApi'] == wasapi_info['index'] and 
-                              dev['maxInputChannels'] > 0 and
-                              ('loopback' in dev['name'].lower() or
-                               'stereo mix' in dev['name'].lower() or
-                               'what u hear' in dev['name'].lower())):
-                            device_name = f"{dev['name']} (WASAPI)"
-                            loopback_devices[device_name] = i
-                            print(f"[{i}] Found WASAPI device (potential loopback): {device_name}")
-                            
-                except OSError as e:
-                    print(f"WASAPI not available: {e}")
-                    
-        except Exception as e:
-            print(f"Error finding loopback devices: {e}")
-            
-        if not loopback_devices:
-            print("\\nNo WASAPI loopback devices found.")
-            print("\\nThis could mean:")
-            print("1. Your audio drivers don't expose WASAPI loopback endpoints")
-            print("2. You may need to enable 'Stereo Mix' in Windows Sound settings")
-            print("3. Professional audio interfaces (like Focusrite) often don't expose loopback")
-            print("4. Try enabling process-specific loopback on Windows 10 20H1+")
-            
-        return loopback_devices
-
-    def _connect_input(self) -> None:
-        '''Safely connect to WASAPI loopback device.'''
-        if self._active_input is None:
-            print("No loopback device selected")
-            return
-            
-        try:
-            print(f"Connecting to WASAPI loopback device index: {self._active_input}")
-            
-            self._pyaudio_instance = pyaudio.PyAudio()
-            
-            # Get device info to determine channels
             dev_info = self._pyaudio_instance.get_device_info_by_index(self._active_input)
-            channels = min(dev_info['maxInputChannels'], 2)  # Use stereo or mono
+            channels = min(dev_info['maxInputChannels'], 2)
+            if channels == 1:
+                new_channel_config = 'MONO'
+            elif channels == 2:
+                new_channel_config = 'STEREO'
+            else:
+                new_channel_config = f'{channels}CH'
+            old_channel_config = self.channel_config
+            self.channel_config = new_channel_config
             
-            print(f"Device: {dev_info['name']}")
-            print(f"Channels: {channels}")
-            print(f"Sample Rate: {self._sample_rate}")
+            if old_channel_config != new_channel_config:
+                self._publish_input_switch()
             
-            self._pa_stream = self._pyaudio_instance.open(
+            self._stream = self._pyaudio_instance.open(
                 format=pyaudio.paFloat32,
                 channels=channels,
                 rate=self._sample_rate,
@@ -141,83 +91,113 @@ class PAConnector(AbstractConnector):
                 frames_per_buffer=self._buffer_size,
                 stream_callback=self._audio_callback
             )
-            
-            self._pa_stream.start_stream()
-            print("WASAPI loopback recording started successfully!")
-            print("Play some system audio to see analysis results...")
-            
+            self._stream.start_stream()
+
         except Exception as e:
-            print(f"Error connecting to loopback device: {e}")
-            print("\\nTroubleshooting:")
-            print("1. Try running as administrator")
-            print("2. Check Windows Sound settings for enabled recording devices")
-            print("3. Verify the device supports loopback recording")
+            raise RuntimeError(f"Failed to connect to audio device: {e}")
+    
 
     def _disconnect_input(self) -> None:
-        '''Safely disconnect from WASAPI loopback device.'''
-        if self._pa_stream:
-            try:
-                self._pa_stream.stop_stream()
-                self._pa_stream.close()
-                self._pa_stream = None
-                print("WASAPI loopback recording stopped")
-            except Exception as e:
-                print(f"Error stopping stream: {e}")
-                
-        if self._pyaudio_instance:
-            try:
-                self._pyaudio_instance.terminate()
-                self._pyaudio_instance = None
-            except Exception as e:
-                print(f"Error terminating PyAudio: {e}")
+        if self._stream:
+            self._stream.stop_stream()
+            self._stream.close()
+            self._stream = None
+
 
     def _audio_callback(self, in_data, frame_count, time_info, status):
-        '''Callback for PyAudioWPatch WASAPI loopback'''
-        try:
-            if status:
-                print(f"Audio status: {status}")
-                
-            # Convert bytes to numpy array and flatten to 1D
-            audio_data = np.frombuffer(in_data, dtype=np.float32)
-            
-            # Handle stereo to mono conversion if needed
-            if len(audio_data) == frame_count * 2:  # Stereo
-                audio_data = audio_data[::2]  # Take left channel only
-            
-            self._buffer = audio_data.copy()
-            self._process_callback(frame_count)
-            
-        except Exception as e:
-            print(f"Audio callback error: {e}")
-            
+        audio_data = np.frombuffer(in_data, dtype=np.float32)
+        if len(audio_data) == frame_count * 2:  # stereo
+            left_channel = audio_data[::2]
+            right_channel = audio_data[1::2]
+            self._buffers = [left_channel.copy(), right_channel.copy()]
+        else:  # mono
+            self._buffers = [audio_data.copy()]
+        self._process_callback(frame_count)
         return (None, pyaudio.paContinue)
+    
 
-    def list_all_devices(self) -> None:
-        '''Debug method to list all available audio devices.'''
-        try:
-            with pyaudio.PyAudio() as p:
-                print("\\n=== ALL PYAUDIOWPATCH DEVICES ===")
-                for i in range(p.get_device_count()):
-                    dev = p.get_device_info_by_index(i)
-                    host_api = p.get_host_api_info_by_index(dev['hostApi'])
-                    loopback_flag = dev.get("isLoopbackDevice", False)
-                    print(f"[{i}] {dev['name']}")
-                    print(f"    Host API: {host_api['name']}")
-                    print(f"    Input channels: {dev['maxInputChannels']}")
-                    print(f"    Output channels: {dev['maxOutputChannels']}")
-                    print(f"    Is Loopback: {loopback_flag}")
-                    print(f"    Default sample rate: {dev['defaultSampleRate']}")
-                    print()
-        except Exception as e:
-            print(f"Error listing devices: {e}")
+    def _publish_input_switch(self) -> None:
+        for callback in self._subscribers:
+            callback()
+    
 
-    def try_process_loopback(self, process_name: str = None) -> bool:
-        '''Try Windows 10 20H1+ process-specific loopback (experimental)'''
-        print("\\nAttempting process-specific WASAPI loopback...")
-        print("This feature requires Windows 10 20H1+ and is experimental")
+    def get_buffers(self) -> List[np.ndarray]:
+        return self._buffers
+    
+
+    def _find_audio_devices(self) -> Dict[str, int]:
+        audio_devices = {}
+        self._add_loopback_devices(audio_devices)
+        self._add_input_devices(audio_devices)
+        return audio_devices
+    
+
+    def _add_loopback_devices(self, audio_devices: Dict[str, int]) -> None:
+        wasapi_info = self._pyaudio_instance.get_host_api_info_by_type(pyaudio.paWASAPI)
         
-        # This would need additional implementation for process-specific capture
-        # For now, just indicate the feature exists
-        print("Process-specific loopback not yet implemented in this connector")
-        print("Contact developer for process loopback implementation")
-        return False
+        for i in range(self._pyaudio_instance.get_device_count()):
+            dev = self._pyaudio_instance.get_device_info_by_index(i)
+            
+            if not self._is_device_usable(dev):
+                continue
+            
+            if dev.get("isLoopbackDevice", False):
+                audio_devices[f"{dev['name']} (Loopback)"] = i
+            elif (dev['hostApi'] == wasapi_info['index'] and 
+                    dev['maxInputChannels'] > 0 and
+                    ('loopback' in dev['name'].lower() or
+                    'stereo mix' in dev['name'].lower())):
+                audio_devices[f"{dev['name']} (WASAPI Loopback)"] = i
+    
+
+    def _add_input_devices(self, audio_devices: Dict[str, int]) -> None:
+        for i in range(self._pyaudio_instance.get_device_count()):
+            dev = self._pyaudio_instance.get_device_info_by_index(i)
+            
+            if (self._is_device_usable(dev) and
+                dev['maxInputChannels'] > 0 and 
+                not dev.get("isLoopbackDevice", False) and
+                not self._device_already_added(dev['name'], audio_devices)):
+                
+                host_api = self._pyaudio_instance.get_host_api_info_by_index(dev['hostApi'])
+                device_name = dev['name']
+                
+                if host_api['name'] != 'MME':
+                    device_name = f"{dev['name']} ({host_api['name']})"
+                
+                audio_devices[device_name] = i
+                
+    
+    def _device_already_added(self, device_name: str, audio_devices: Dict[str, int]) -> bool:
+        return (device_name in audio_devices or
+                f"{device_name} (Loopback)" in audio_devices or
+                f"{device_name} (WASAPI Loopback)" in audio_devices)
+    
+    def _is_device_usable(self, dev: dict) -> bool:
+        """Check if device is enabled and usable (not disabled or hidden)."""
+        # basic device validity
+        if not dev.get('name') or not dev['name'].strip():
+            return False
+        # disabled devices often have 0.0
+        if dev.get('defaultSampleRate', 0) <= 0:
+            return False
+        # suspicious names 
+        name_lower = dev['name'].lower()
+        disabled_indicators = [
+            'microsoft sound mapper',
+            'primary sound',
+            'communications device',
+            'disabled',
+            'unavailable'
+        ]
+        if any(indicator in name_lower for indicator in disabled_indicators):
+            return False
+        return True
+    
+    def __del__(self):
+        try:
+            self.deactivate()
+            if hasattr(self, '_pyaudio_instance') and self._pyaudio_instance:
+                self._pyaudio_instance.terminate()
+        except Exception:
+            pass

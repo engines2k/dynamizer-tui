@@ -3,7 +3,7 @@ from typing import List, Callable
 from analyzers import BeatHarmonySeparator
 import outputs
 from outputs.abstract_analyzer import AbstractAnalyzer
-from audio_connectors.jackconnector import JACKConnector
+from audio_connectors import PAConnector
 from weightings import a_weighting
 from lookback import Lookback
 import numpy as np
@@ -27,7 +27,7 @@ class MasterAnalyzer():
         self._pause_processing = False
         self._callbacks: List[Callable] = []
         self._last_callback_time = 0.0
-        self.audio_connector = JACKConnector(self._process_callback)
+        self.audio_connector = PAConnector(self._process_callback)
         self.signal_lookback = Lookback(self.lookback_duration_ms, self.sample_rate, self.hop_size)
         self._sensitivity = 1.0
 
@@ -109,14 +109,15 @@ class MasterAnalyzer():
             self._process_buffer_window()
 
     def _load_frames_into_buffer(self) -> None:
-        frame = self.audio_connector.get_buffer()  # Fixed: removed ._client
+        #TODO: Support for stereo (2 buffers)
+        frame = self.audio_connector.get_buffers()[0]  # Fixed: removed ._client
         if frame is not None:
             frame = np.multiply(self._sensitivity, frame)
             self._inbuffer = np.concatenate((self._inbuffer, frame))
 
 
     def _buffer_ready(self):
-        return len(self._inbuffer) >= self.window_size + self.hop_size
+        return len(self._inbuffer) >= self.window_size
 
     def _process_buffer_window(self):
         window = self._inbuffer[:self.window_size]
@@ -157,6 +158,7 @@ class MasterAnalyzer():
         return freqs
 
     def _output_result(self, features):
+        print(features)
         current_time = time.time() * 1000
         for output in self._outputs.values():
             output.send(features)
