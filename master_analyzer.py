@@ -109,7 +109,7 @@ class MasterAnalyzer():
             self._process_buffer_window()
 
     def _load_frames_into_buffer(self) -> None:
-        frame = self.audio_connector.get_buffer()  # Fixed: removed ._client
+        frame = self.audio_connector.get_buffers()  # Fixed: removed ._client
         if frame is not None:
             frame = np.multiply(self._sensitivity, frame)
             self._inbuffer = np.concatenate((self._inbuffer, frame))

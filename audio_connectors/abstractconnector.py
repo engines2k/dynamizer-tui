@@ -1,49 +1,55 @@
-from typing import Dict, List
+from typing import List
 from abc import ABC, abstractmethod
 
 class AbstractConnector(ABC):
+
+    channel_config: str
+
     def __init__(self) -> None:
         '''__init__'''
         pass
 
 
     @abstractmethod
-    def get_inputs(self) -> Dict[str, str]:
-        '''List all valid input devices as a dictionary of {pretty_name: port_name}.'''
+    def get_inputs(self) -> List[str]:
+        '''Lists all valid input devices as a dictionary of {pretty_name: port_name}.'''
         pass
 
 
     @abstractmethod
     def activate(self) -> None:
-        '''Activate the connnector to send signal.'''
+        '''Activates the connnector to send signal.'''
         pass
 
 
     @abstractmethod
     def deactivate(self) -> None:
-        '''Stop processing signal.'''
+        '''Stops processing signal and deactivates internal client if applicable.'''
         pass
 
     @abstractmethod
-    def get_buffer(self):        
-        '''Get the current buffer of audio frames.'''
+    def get_buffers(self):        
+        '''Gets the channel buffers of audio frames.'''
         pass
 
 
     @abstractmethod
-    def change_input(self, input) -> None:
-        '''Change the active input for the connector. (hot-swap ready)'''
+    def switch_input(self, input: str) -> None:
+        '''
+        Switches the active input for the connector and notifies subscribers via
+        callback that the input has changed, so they can respond if the new
+        input has different properties (eg. switch from mono to stereo input).
+        '''
         pass
 
 
     @abstractmethod
     def _connect_input(self) -> None:
-        '''Safely connect an input.'''
+        '''Safely connects an input.'''
         pass
 
 
     @abstractmethod
     def _disconnect_input(self) -> None:
-        '''Safely disconnect an input.'''
+        '''Safely disconnects an input.'''
         pass
-
