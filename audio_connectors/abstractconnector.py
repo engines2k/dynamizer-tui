@@ -7,9 +7,8 @@ class AbstractConnector(ABC):
         pass
 
 
-    @property
     @abstractmethod
-    def inputs(self) -> Dict[str, str]:
+    def get_inputs(self) -> Dict[str, str]:
         '''List all valid input devices as a dictionary of {pretty_name: port_name}.'''
         pass
 

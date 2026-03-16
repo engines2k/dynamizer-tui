@@ -116,7 +116,7 @@ class MasterAnalyzer():
 
 
     def _buffer_ready(self):
-        return len(self._inbuffer) >= self.window_size + self.hop_size
+        return len(self._inbuffer) >= self.window_size
 
     def _process_buffer_window(self):
         window = self._inbuffer[:self.window_size]
@@ -156,6 +156,7 @@ class MasterAnalyzer():
         return freqs
 
     def _output_result(self, features):
+        print(features)
         current_time = time.time() * 1000
         for output in self._outputs.values():
             output.send(features)

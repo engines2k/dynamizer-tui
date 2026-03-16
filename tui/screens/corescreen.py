@@ -60,7 +60,7 @@ class CoreOptionsControls(HorizontalGroup):
     def __init__(self, parent):
         super().__init__()
         self._parent = parent
-        self._port_options = self.app.analyzer.audio_connector.get_available_ports() # type: ignore
+        self._port_options = self.app.analyzer.audio_connector.get_inputs() # type: ignore
 
 
     def compose(self) -> ComposeResult:
