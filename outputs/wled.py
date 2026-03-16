@@ -12,22 +12,22 @@ LISTEN_TIMEOUT_SECONDS = 2
 LIGHT_SETTINGS_LOW = {
     'adjust': -1000,
     'multiplier': .5,
-    'color': (1, 200, 78), #BRG
+    'color': (1, 200, 28), #BRG
     'speed': 8
 }
 
 LIGHT_SETTINGS_LOW_BEAT = {
-    'multiplier': 71,
+    'multiplier': 55,
     'adjust': 0,
     'color': (255, 25, 0), #BRG 
-    'speed': 6
+    'speed': 7
 }
 
 LIGHT_SETTINGS_HIGH = {
-    'multiplier': 1,
+    'multiplier': 1.4,
     'adjust': 0,
     'color': (100, 30, 15), #BRG
-    'speed': 6
+    'speed': 5
 }
 
 class WLEDClient:
