@@ -11,7 +11,7 @@ class PAConnector(AbstractConnector):
     def __init__(self, process_callback: Callable):
         super().__init__()
         
-        self.channel_config = "STEREO"
+        self.channel_config = None
         self.active = False
 
         self._sample_rate = 44100
@@ -71,11 +71,17 @@ class PAConnector(AbstractConnector):
             dev_info = self._pyaudio_instance.get_device_info_by_index(self._active_input)
             channels = min(dev_info['maxInputChannels'], 2)
             if channels == 1:
-                self.channel_config = 'MONO'
+                new_channel_config = 'MONO'
             elif channels == 2:
-                self.channel_config = 'STEREO'
+                new_channel_config = 'STEREO'
             else:
-                self.channel_config = f'{channels}CH'
+                new_channel_config = f'{channels}CH'
+            old_channel_config = self.channel_config
+            self.channel_config = new_channel_config
+            
+            if old_channel_config != new_channel_config:
+                self._publish_input_switch()
+            
             self._stream = self._pyaudio_instance.open(
                 format=pyaudio.paFloat32,
                 channels=channels,
