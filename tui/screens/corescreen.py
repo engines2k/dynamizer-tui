@@ -68,7 +68,7 @@ class CoreOptionsControls(HorizontalGroup):
         input_select.border_title = 'audio src'
 
         aux_switch = AuxControl(id='aux-mode')
-        aux_switch.border_title = 'aux'
+        aux_switch.border_title = '-'
 
         volume_control = VolumeControl(total=200)
         volume_control.border_subtitle = 'sensitivity'

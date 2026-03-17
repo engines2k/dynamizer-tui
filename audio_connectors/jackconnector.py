@@ -50,7 +50,7 @@ class JACKConnector(AbstractConnector):
         if self.active:
             self._disconnect_input()
         self._input = input
-        self.input_is_aux = True
+        self.input_is_aux = False
         if self.active:
             self._connect_input()
 

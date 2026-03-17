@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 class AbstractConnector(ABC):
 
     channel_config: str
+    input_is_aux: bool 
 
     def __init__(self) -> None:
         '''__init__'''

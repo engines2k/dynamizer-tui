@@ -13,6 +13,7 @@ class PAConnector(AbstractConnector):
         
         self.channel_config = None
         self.active = False
+        self.input_is_aux = False
 
         self._sample_rate = 44100
         self._buffer_size = 1024
@@ -43,6 +44,7 @@ class PAConnector(AbstractConnector):
         
         self._active_input = self._audio_devices[input_name]
         self._current_input_name = input_name
+        self.input_is_aux = False
         
         if self.active:
             self._connect_input()
@@ -122,7 +124,11 @@ class PAConnector(AbstractConnector):
     
 
     def get_buffers(self) -> List[np.ndarray]:
-        return self._buffers
+        buffers = self._buffers
+        SCALAR_AUX_BOOST = 3
+        if self.input_is_aux:
+            buffers = [np.multiply(SCALAR_AUX_BOOST, b) for b in buffers]
+        return buffers
     
 
     def _find_audio_devices(self) -> Dict[str, int]:
