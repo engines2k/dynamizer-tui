@@ -27,6 +27,7 @@ class AbstractConnector(ABC):
         '''Stops processing signal and deactivates internal client if applicable.'''
         pass
 
+
     @abstractmethod
     def get_buffers(self) -> List:
         '''Gets the channel buffers of audio frames.'''
