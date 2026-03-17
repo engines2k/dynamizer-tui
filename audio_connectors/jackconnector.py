@@ -1,6 +1,7 @@
 import os
 import re
 import jack
+import numpy as np
 from dotenv import load_dotenv
 from typing import Callable, DefaultDict, List
 from collections import defaultdict
@@ -13,6 +14,10 @@ load_dotenv()
 class JACKConnector(AbstractConnector):
 
     def __init__(self, process_callback) -> None:
+        self.input_is_aux = False
+        self.channel_config: str
+        self.active = False
+
         self._client = jack.Client("dynamizer")
         self._client.inports.register("input_left")
         self._client.inports.register("input_right")
@@ -20,9 +25,7 @@ class JACKConnector(AbstractConnector):
         self._client.set_shutdown_callback(self._shutdown_callback)
         self._input = os.getenv('DEFAULT_INPUT') or ""
         self._available_ports: DefaultDict[str, list] = defaultdict(list)
-        self.channel_config: str
         self._subscribers: List[Callable] = []
-        self.active = False
 
 
     def activate(self):
@@ -47,12 +50,17 @@ class JACKConnector(AbstractConnector):
         if self.active:
             self._disconnect_input()
         self._input = input
+        self.input_is_aux = True
         if self.active:
             self._connect_input()
 
 
     def get_buffers(self):
-        return [ inport.get_array() for inport in self._client.inports ] # type: ignore[attr-defined]
+        buffers = [ inport.get_array() for inport in self._client.inports ] # type: ignore[attr-defined]
+        SCALAR_AUX_BOOST = 3
+        if self.input_is_aux:
+            buffers = [ np.multiply(SCALAR_AUX_BOOST, b) for b in buffers ]
+        return buffers
 
 
     def deactivate(self):
