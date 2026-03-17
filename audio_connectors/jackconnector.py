@@ -28,6 +28,11 @@ class JACKConnector(AbstractConnector):
         self._subscribers: List[Callable] = []
 
 
+    def subscribe(self, callback: Callable) -> None:
+        if callback not in self._subscribers:
+            self._subscribers.append(callback)
+
+
     def activate(self):
         self._client.activate()
         self.get_inputs()

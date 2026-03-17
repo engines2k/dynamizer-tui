@@ -1,17 +1,25 @@
 from textual import on
 from textual.app import ComposeResult
+from textual.reactive import reactive
 from textual.widgets import Button, ProgressBar, Static, Switch
 from textual.containers import VerticalGroup
 
 class AuxControl(VerticalGroup):
 
+    aux_active = reactive(False)
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.value = 100
 
     def compose(self) -> ComposeResult:
         yield Static(content=f'aux')
-        yield Switch(id='aux-mode')
+        yield Switch(id='aux-mode', value=self.aux_active)
+
+    def on_mount(self) -> None:
+        self.app.analyzer.audio_connector.subscribe(self._on_input_switch)  # type: ignore
+
+    def _on_input_switch(self) -> None:
+        self.query_one('#aux-mode', Switch).value = self.app.analyzer.audio_connector.input_is_aux # type: ignore
 
     @on(Switch.Changed, '#aux-mode')
     def toggle_connector_aux_mode(self, event: Switch.Changed):
