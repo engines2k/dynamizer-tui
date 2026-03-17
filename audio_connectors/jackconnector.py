@@ -19,7 +19,7 @@ class JACKConnector(AbstractConnector):
         self._client.set_process_callback(process_callback)
         self._client.set_shutdown_callback(self._shutdown_callback)
         self._input = os.getenv('DEFAULT_INPUT') or ""
-        self._available_outports: DefaultDict[str, list] = defaultdict(list)
+        self._available_ports: DefaultDict[str, list] = defaultdict(list)
         self.channel_config: str
         self._subscribers: List[Callable] = []
         self.active = False
@@ -33,13 +33,14 @@ class JACKConnector(AbstractConnector):
 
 
     def get_inputs(self) -> List[str]:
-        self._available_outports.clear()
+        self._available_ports.clear()
         for port in self._client.get_ports(is_midi=False):
-            if self._valid_outport(port):
+            if self._valid_input_port(port):
                 port_details = self._parse_port_name(port.name)
-                self._available_outports[port_details['device']].append(port.name)
+                label = f'{port_details['device']} ({port_details['type']})'
+                self._available_ports[label].append(port.name)
                 
-        return list(self._available_outports.keys())
+        return list(self._available_ports.keys())
 
 
     def switch_input(self, input: str):
@@ -61,7 +62,7 @@ class JACKConnector(AbstractConnector):
 
     def _connect_input(self):
         if self._input:
-            input_outports = self._available_outports[self._input]
+            input_outports = self._available_ports[self._input]
             try:
                 if len(input_outports) == 1:
                     self._client.connect(f'{input_outports[0]}', f'dynamizer:input_left')
@@ -91,12 +92,12 @@ class JACKConnector(AbstractConnector):
         return match.groupdict()
 
     def _disconnect_input(self):
-        for inport in self._client.inports:
-            for connection in self._client.get_all_connections(inport):
-                self._client.disconnect(connection, inport)
+        for port in self._client.inports:
+            for connection in self._client.get_all_connections(port):
+                self._client.disconnect(connection, port)
 
 
-    def _valid_outport(self, port: jack.Port):
+    def _valid_input_port(self, port: jack.Port):
         valid_port_types = {'capture', 'monitor', 'output'}
         port_details = self._parse_port_name(port.name)
         if isinstance(port, jack.OwnPort) or port_details['type'] not in valid_port_types:
