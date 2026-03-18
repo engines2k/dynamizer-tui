@@ -31,6 +31,7 @@ class Visualizers(HorizontalGroup):
 
     def compose(self) -> ComposeResult:
         yield VisualizerDisplay(id='analyze-low', feature='kick_harmony')  # type: ignore
+        yield VisualizerDisplay(id='analyze-hi-beat', feature='snare_beat', summary_function=max)  # type: ignore
         yield VisualizerDisplay(id='analyze-hi', feature='snare_signal', summary_function=max)  # type: ignore
 
 class VisualizerDisplay(Sparkline):

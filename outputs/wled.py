@@ -9,6 +9,13 @@ WLED_HOST = "wled-bfn2.local"
 WLED_PORT = 21324
 LISTEN_TIMEOUT_SECONDS = 2
 
+LIGHT_SETTINGS_LOW_2 = {
+    'adjust': -1000,
+    'multiplier': .5,
+    'color': (1, 200, 78), #BRG
+    'speed': 6
+}
+
 LIGHT_SETTINGS_LOW = {
     'adjust': -1000,
     'multiplier': .5,
@@ -24,10 +31,17 @@ LIGHT_SETTINGS_LOW_BEAT = {
 }
 
 LIGHT_SETTINGS_HIGH = {
-    'multiplier': 1.3,
+    'multiplier': 1.25,
     'adjust': 0,
     'color': (100, 30, 15), #BRG
     'speed': 5
+}
+
+LIGHT_SETTINGS_HIGH_BEAT = {
+    'multiplier': 20,
+    'adjust': 0,
+    'color': (5, 0, 1), #BRG 
+    'speed': 7
 }
 
 CTRLLER_1_DESTINATIONS = [
@@ -44,8 +58,6 @@ CTRLLER_1_DEVICES = [
     LightDevice(
         n_leds=144,
         buffers=[
-            (0, CTRLLER_1_BUFFERS['snare_signal']),
-            (21, CTRLLER_1_BUFFERS['kick_harmony']),
             (21, CTRLLER_1_BUFFERS['kick_beat']),
             (121, CTRLLER_1_BUFFERS['snare_signal']),
         ]
@@ -66,27 +78,30 @@ CTRLLER_2_DESTINATIONS = [
 ]
 
 CTRLLER_2_BUFFERS =  {
-    'kick_harmony': LightBuffer(n_frames=26, settings=LIGHT_SETTINGS_LOW),
+    'kick_harmony': LightBuffer(n_frames=26, settings=LIGHT_SETTINGS_LOW_2),
     'kick_beat': LightBuffer(n_frames=26, settings=LIGHT_SETTINGS_LOW_BEAT),
     'snare_signal': LightBuffer(n_frames=26, settings=LIGHT_SETTINGS_HIGH),
+    'snare_beat': LightBuffer(n_frames=26, settings=LIGHT_SETTINGS_HIGH_BEAT),
 }
 
 CTRLLER_2_DEVICES = [
     LightDevice(
         n_leds=31,
         buffers=[
-            (0, CTRLLER_1_BUFFERS['snare_signal']),
-            (4, CTRLLER_1_BUFFERS['snare_signal']),
-            (25, CTRLLER_1_BUFFERS['kick_harmony']),
-            (25, CTRLLER_1_BUFFERS['kick_beat']),
+            (0, CTRLLER_2_BUFFERS['snare_signal']),
+            (4, CTRLLER_2_BUFFERS['snare_signal']),
+            (4, CTRLLER_2_BUFFERS['snare_beat']),
+            (25, CTRLLER_2_BUFFERS['kick_harmony']),
+            (25, CTRLLER_2_BUFFERS['kick_beat']),
         ]
     ),
     LightDevice(
         n_leds=37,
         buffers=[
-            (0, CTRLLER_1_BUFFERS['kick_harmony']),
-            (0, CTRLLER_1_BUFFERS['kick_beat']),
-            (26, CTRLLER_1_BUFFERS['snare_signal']),
+            (0, CTRLLER_2_BUFFERS['kick_harmony']),
+            (0, CTRLLER_2_BUFFERS['kick_beat']),
+            (26, CTRLLER_2_BUFFERS['snare_signal']),
+            (26, CTRLLER_2_BUFFERS['snare_beat']),
         ]
     )
 ]
