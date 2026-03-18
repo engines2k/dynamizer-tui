@@ -29,7 +29,7 @@ CoreOptionsControls {
 	height: 10;
 }
 
-CoreOptionsControls Switch {
+CoreOptionsControls Switch#power {
 	padding: 0 1;
 	height: 3;
 }
@@ -72,4 +72,22 @@ VolumeControl Button {
 	padding: 0;
 	border: none;
 	margin: 0 1;
+}
+
+CoreOptionsControls AuxControl {
+	width: 7;
+	border: solid $boost;
+	color: $panel;
+}
+
+
+CoreOptionsControls AuxControl:focus-within {
+	border: solid $warning;
+	width: 7;
+	color: $warning;
+}
+
+CoreOptionsControls AuxControl Switch {
+	padding: 0;
+	border:none;
 }

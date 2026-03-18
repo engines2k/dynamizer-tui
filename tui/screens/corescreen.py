@@ -1,13 +1,9 @@
-from textual.screen import Screen
-from outputs.terminalwave import SignalAnalyzer
 from textual import on
-from textual.widgets import Header, Static, Label, Select, Switch, Footer, Sparkline
+from textual.widgets import Static, Label, Select, Switch, Footer, Sparkline
 from textual.app import ComposeResult
 from textual.containers import VerticalGroup, HorizontalGroup
-from textual.reactive import reactive
 from tui.screens.basescreen import BaseScreen, ScreenContent
-from tui.widgets import DynamizerLogo
-from tui.widgets.volumecontrol import VolumeControl
+from tui.widgets import AuxControl, VolumeControl, DynamizerLogo
 
 
 class CORE(BaseScreen):
@@ -68,17 +64,23 @@ class CoreOptionsControls(HorizontalGroup):
         input_items = self._port_options
         power_switch = Switch(id="power")
         power_switch.border_subtitle = '⏻'
+
         input_select = Select(options=[(i, i) for i in input_items], value=input_items[0])
         input_select.border_title = 'audio src'
+
+        aux_switch = AuxControl(id='aux-mode')
+        aux_switch.border_title = '-'
+
         volume_control = VolumeControl(total=200)
         volume_control.border_subtitle = 'sensitivity'
         volume_control.styles.border_subtitle_align = 'right'
 
         yield power_switch
         yield input_select
+        yield aux_switch
         yield volume_control
 
-    @on(Switch.Changed)
+    @on(Switch.Changed, '#power')
     def toggle_analyzer(self, event: Switch.Changed):
         if event.value == False:
             self._update_status('Dynamizer core paused')
