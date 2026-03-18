@@ -62,7 +62,7 @@ class JACKConnector(AbstractConnector):
 
     def get_buffers(self):
         buffers = [ inport.get_array() for inport in self._client.inports ] # type: ignore[attr-defined]
-        SCALAR_AUX_BOOST = 3
+        SCALAR_AUX_BOOST = .15
         if self.input_is_aux:
             buffers = [ np.multiply(SCALAR_AUX_BOOST, b) for b in buffers ]
         return buffers

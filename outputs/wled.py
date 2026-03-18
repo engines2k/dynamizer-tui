@@ -5,8 +5,6 @@ from .delayqueue import DelayQueue
 from typing import List, Tuple
 
 OUTPUT_DELAY = 0#220
-WLED_HOST = "wled-bfn2.local"
-WLED_PORT = 21324
 LISTEN_TIMEOUT_SECONDS = 2
 
 LIGHT_SETTINGS_LOW = {
@@ -34,33 +32,34 @@ class WLEDClient:
     def __init__(self):
         self.multiplier = 1.3
         self._destinations = [
-            { 'host': 'wled-bfn.local', 'port': 21324 },
-            { 'host': 'wled-bfn2.local', 'port': 21324 }
+            { 'host': '4.3.2.1', 'port': 21324 },
+            #{ 'host': 'wled-bfn.local', 'port': 21324 },
+            #{ 'host': 'wled-bfn2.local', 'port': 21324 }
         ]
         self._sockets = List[socket.SocketIO]
         self._packet_queue = DelayQueue(delay=OUTPUT_DELAY)
         self._active = False
         self._light_buffers: dict[str, LightBuffer] = {
-            'kick_harmony': LightBuffer(n_frames=30, settings=LIGHT_SETTINGS_LOW),
-            'kick_beat': LightBuffer(n_frames=30, settings=LIGHT_SETTINGS_LOW_BEAT),
-            'snare_signal': LightBuffer(n_frames=25, settings=LIGHT_SETTINGS_HIGH),
+            'kick_harmony': LightBuffer(n_frames=120, settings=LIGHT_SETTINGS_LOW),
+            'kick_beat': LightBuffer(n_frames=120, settings=LIGHT_SETTINGS_LOW_BEAT),
+            'snare_signal': LightBuffer(n_frames=22, settings=LIGHT_SETTINGS_HIGH),
         }
 
         self.light_devices: List[LightDevice] = [
             LightDevice(
                 n_leds=144,
                 buffers=[
-                    (0, self._light_buffers['snare_signal']),
-                    (26, self._light_buffers['kick_harmony']),
-                    (26, self._light_buffers['kick_beat']),
+                    (0, self._light_buffers['kick_harmony']),
+                    (0, self._light_buffers['kick_beat']),
+                    (122, self._light_buffers['snare_signal']),
                 ]
             ),
             LightDevice(
                 n_leds=144,
                 buffers=[
-                    (0, self._light_buffers['snare_signal']),
-                    (26, self._light_buffers['kick_harmony']),
-                    (26, self._light_buffers['kick_beat']),
+                    (0, self._light_buffers['kick_harmony']),
+                    (0, self._light_buffers['kick_beat']),
+                    (122, self._light_buffers['snare_signal']),
                 ]
             )
         ]

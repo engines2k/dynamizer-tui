@@ -125,7 +125,7 @@ class PAConnector(AbstractConnector):
 
     def get_buffers(self) -> List[np.ndarray]:
         buffers = self._buffers
-        SCALAR_AUX_BOOST = 3
+        SCALAR_AUX_BOOST = .15
         if self.input_is_aux:
             buffers = [np.multiply(SCALAR_AUX_BOOST, b) for b in buffers]
         return buffers
