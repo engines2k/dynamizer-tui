@@ -35,9 +35,9 @@ CTRLLER_1_DESTINATIONS = [
 ]
 
 CTRLLER_1_BUFFERS =  {
-    'kick_harmony': LightBuffer(n_frames=100, settings=LIGHT_SETTINGS_LOW),
-    'kick_beat': LightBuffer(n_frames=100, settings=LIGHT_SETTINGS_LOW_BEAT),
-    'snare_signal': LightBuffer(n_frames=20, settings=LIGHT_SETTINGS_HIGH),
+    'kick_harmony': LightBuffer(n_frames=30, settings=LIGHT_SETTINGS_LOW),
+    'kick_beat': LightBuffer(n_frames=30, settings=LIGHT_SETTINGS_LOW_BEAT),
+    'snare_signal': LightBuffer(n_frames=25, settings=LIGHT_SETTINGS_HIGH),
 }
 
 CTRLLER_1_DEVICES = [
@@ -45,18 +45,16 @@ CTRLLER_1_DEVICES = [
         n_leds=144,
         buffers=[
             (0, CTRLLER_1_BUFFERS['snare_signal']),
-            (21, CTRLLER_1_BUFFERS['kick_harmony']),
-            (21, CTRLLER_1_BUFFERS['kick_beat']),
-            (121, CTRLLER_1_BUFFERS['snare_signal']),
+            (26, CTRLLER_1_BUFFERS['kick_harmony']),
+            (26, CTRLLER_1_BUFFERS['kick_beat']),
         ]
     ),
     LightDevice(
         n_leds=144,
         buffers=[
             (0, CTRLLER_1_BUFFERS['snare_signal']),
-            (21, CTRLLER_1_BUFFERS['kick_harmony']),
-            (21, CTRLLER_1_BUFFERS['kick_beat']),
-            (121, CTRLLER_1_BUFFERS['snare_signal']),
+            (26, CTRLLER_1_BUFFERS['kick_harmony']),
+            (26, CTRLLER_1_BUFFERS['kick_beat']),
         ]
     )
 ]
@@ -66,14 +64,14 @@ CTRLLER_2_DESTINATIONS = [
 ]
 
 CTRLLER_2_BUFFERS =  {
-    'kick_harmony': LightBuffer(n_frames=26, settings=LIGHT_SETTINGS_LOW),
-    'kick_beat': LightBuffer(n_frames=26, settings=LIGHT_SETTINGS_LOW_BEAT),
-    'snare_signal': LightBuffer(n_frames=26, settings=LIGHT_SETTINGS_HIGH),
+    'kick_harmony': LightBuffer(n_frames=30, settings=LIGHT_SETTINGS_LOW),
+    'kick_beat': LightBuffer(n_frames=30, settings=LIGHT_SETTINGS_LOW_BEAT),
+    'snare_signal': LightBuffer(n_frames=25, settings=LIGHT_SETTINGS_HIGH),
 }
 
 CTRLLER_2_DEVICES = [
     LightDevice(
-        n_leds=37,
+        n_leds=34,
         buffers=[
             (0, CTRLLER_1_BUFFERS['snare_signal']),
             (26, CTRLLER_1_BUFFERS['kick_harmony']),
@@ -81,11 +79,11 @@ CTRLLER_2_DEVICES = [
         ]
     ),
     LightDevice(
-        n_leds=37,
+        n_leds=31,
         buffers=[
-            (0, CTRLLER_1_BUFFERS['kick_harmony']),
-            (0, CTRLLER_1_BUFFERS['kick_beat']),
-            (26, CTRLLER_1_BUFFERS['snare_signal']),
+            (0, CTRLLER_1_BUFFERS['snare_signal']),
+            (26, CTRLLER_1_BUFFERS['kick_harmony']),
+            (26, CTRLLER_1_BUFFERS['kick_beat']),
         ]
     )
 ]
