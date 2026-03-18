@@ -24,7 +24,7 @@ LIGHT_SETTINGS_LOW_BEAT = {
 }
 
 LIGHT_SETTINGS_HIGH = {
-    'multiplier': 1.1,
+    'multiplier': 1.3,
     'adjust': 0,
     'color': (100, 30, 15), #BRG
     'speed': 5
@@ -73,11 +73,12 @@ CTRLLER_2_BUFFERS =  {
 
 CTRLLER_2_DEVICES = [
     LightDevice(
-        n_leds=37,
+        n_leds=31,
         buffers=[
             (0, CTRLLER_1_BUFFERS['snare_signal']),
-            (26, CTRLLER_1_BUFFERS['kick_harmony']),
-            (26, CTRLLER_1_BUFFERS['kick_beat']),
+            (4, CTRLLER_1_BUFFERS['snare_signal']),
+            (25, CTRLLER_1_BUFFERS['kick_harmony']),
+            (25, CTRLLER_1_BUFFERS['kick_beat']),
         ]
     ),
     LightDevice(
