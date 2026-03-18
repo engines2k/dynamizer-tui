@@ -1,18 +1,20 @@
 import time
 from collections import deque
+from typing import List
 
 class DelayQueueItem():
-    def __init__(self, data):
+    def __init__(self, data, addresses: List[str],):
         self.data = data
         self.created = time.time()*1000
+        self.addresses = addresses
 
 class DelayQueue():
     def __init__(self, delay=0):
         self._delay = delay
         self._queue = deque()
 
-    def push(self, item):
-        self._queue.appendleft(DelayQueueItem(item))
+    def push(self, item, addresses):
+        self._queue.appendleft(DelayQueueItem(item, addresses))
 
     def get_ready_items(self):
         result = []
@@ -24,7 +26,7 @@ class DelayQueue():
             item = self._queue.pop()
             item_ready_time = item.created + self._delay
             if item_ready_time <= current_time:
-                result.append(item.data)
+                result.append(item)
             else:
                 not_ready.appendleft(item)
 
