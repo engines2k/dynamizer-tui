@@ -49,13 +49,13 @@ class MasterAnalyzer():
         self.weightings = self._calc_a_weighting()
 
     def _init_outputs(self):
-        self._outputs = {
+        self.outputs = {
             "wled": outputs.wled.WLEDClient(),
             "terminalwave": outputs.SignalAnalyzer('kick_signal'),
         }
 
     def add_output(self, label: str, output: AbstractAnalyzer):
-        self._outputs[label] = output
+        self.outputs[label] = output
 
     def subscribe(self, callback: Callable) -> None:
         self._callbacks.append(callback)
@@ -87,7 +87,7 @@ class MasterAnalyzer():
 
     def activate(self) -> None:
         self.audio_connector.activate()
-        for output in self._outputs.values():
+        for output in self.outputs.values():
             output.activate()
         self._active = True
 
@@ -158,7 +158,7 @@ class MasterAnalyzer():
 
     def _output_result(self, features):
         current_time = time.time() * 1000
-        for output in self._outputs.values():
+        for output in self.outputs.values():
             output.send(features)
         if current_time - self._last_callback_time >= self.min_callback_interval_ms:
             self._last_callback_time = current_time

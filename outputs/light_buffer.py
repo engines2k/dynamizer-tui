@@ -120,7 +120,7 @@ class LightBuffer:
 class LightDevice():
     def __init__(self, n_leds, buffers: List[Tuple[int, LightBuffer]]=[]):
         self._n_leds = n_leds
-        self._buffers: List[Tuple[int, LightBuffer]] = buffers
+        self.buffers: List[Tuple[int, LightBuffer]] = buffers
 
     @property
     def n_leds(self):
@@ -130,9 +130,9 @@ class LightDevice():
         self._n_leds = n_leds
 
     def build_payload(self):
-        if self._buffers is None:
+        if self.buffers is None:
             return []
         result = LightBufferFrame([1] * (self._n_leds * 3))
-        for position, buffer in self._buffers:
+        for position, buffer in self.buffers:
             result = result.place(buffer.frame, position)
         return result
