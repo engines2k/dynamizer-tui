@@ -43,7 +43,7 @@ LIGHT_SETTINGS_HIGH_BEAT = {
 }
 
 CTRLLER_1_DESTINATIONS = [
-    #{ 'host': 'wled-bfn.local', 'port': 21324 },
+    { 'host': 'wled-bfn.local', 'port': 21324 },
 ]
 
 CTRLLER_1_BUFFERS =  {
@@ -72,7 +72,7 @@ CTRLLER_1_DEVICES = [
 ]
 
 CTRLLER_2_DESTINATIONS = [
-    #{ 'host': 'wled-bfn2.local', 'port': 21324 }
+    { 'host': 'wled-bfn2.local', 'port': 21324 }
 ]
 
 CTRLLER_2_BUFFERS =  {

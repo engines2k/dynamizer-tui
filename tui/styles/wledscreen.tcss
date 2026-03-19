@@ -2,3 +2,38 @@ WLEDOptions {
    layout: horizontal;
 }
 
+ControllerControls Collapsible {
+   margin-bottom: 1;
+}
+
+CtrlLightDeviceControls Collapsible {
+   margin-bottom: 1;
+}
+
+CtrlLightBufferControls Collapsible {
+   margin-bottom: 1;
+}
+
+Input.compact-input {
+   width: 10;
+}
+
+CtrlLightBufferControls HorizontalGroup {
+   align: left middle;
+   margin-bottom: 1;
+}
+
+CtrlLightBufferControls HorizontalGroup Static {
+   width: 16;
+   content-align: right middle;
+}
+
+CtrlLightDeviceControls HorizontalGroup {
+   align: left middle;
+   margin-bottom: 1;
+}
+
+CtrlLightDeviceControls HorizontalGroup Label {
+   width: 5;
+}
+
