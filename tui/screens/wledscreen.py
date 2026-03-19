@@ -22,13 +22,12 @@ class WLEDOptions(VerticalGroup):
 
     @property
     def wled_client(self):
-        return self.app.analyzer.outputs['wled']
+        return self.app.analyzer.outputs['wled'] # type: ignore
     
     def compose(self) -> ComposeResult:
-        yield VerticalGroup(*[
-            ControllerControls(i, controller) 
-            for (i, controller) in enumerate(self.wled_client.controllers)
-        ])
+        with VerticalGroup():
+            for (i, controller) in enumerate(self.wled_client.controllers):
+                yield ControllerControls(i, controller) 
 
 
 class ControllerControls(VerticalGroup):
@@ -42,7 +41,7 @@ class ControllerControls(VerticalGroup):
         n_devices = len(self._controller.light_devices)
         controller_hosts = ', '.join([f"{d['host']}:{d['port']}" for d in self._controller.destinations])
         
-        with Collapsible(title=f"Controller {self.idx}", collapsed=True, id=f"ctrl-{self.idx}"):
+        with Collapsible(title=f"📟 controller {self.idx}", collapsed=True, id=f"ctrl-{self.idx}"):
             yield Static(f"[b]Hosts:[/b] {controller_hosts}", id=f"ctrl-summary-{self.idx}")
             yield Static(f"[b]Devices:[/b] {n_devices}", id=f"ctrl-devices-count-{self.idx}")
             yield CtrlDestinationControls(self._controller.destinations)
@@ -84,16 +83,15 @@ class CtrlLightDeviceControls(VerticalGroup):
     def compose(self) -> ComposeResult:
         n_buffers = len(self._device.buffers)
         
-        with Collapsible(title=f"Device {self.idx}", collapsed=True, id=f"device-{self.idx}"):
-            yield Static(f"[b]Buffers:[/b] {n_buffers}", id=f"device-summary-{self.idx}")
-            yield HorizontalGroup(
-                Label("LEDs:"),
-                Input(type='integer', value=str(self._device.n_leds), id='led-count', classes="compact-input"),
-            )
-            yield VerticalGroup(
-                *[CtrlLightBufferControls(i, pos, buf, self) for i, (pos, buf) in enumerate(self._device.buffers)],
-                id=f"device-{self.idx}-buffers"
-            )
+        with Collapsible(title=f"💡device {self.idx}", collapsed=True, id=f"device-{self.idx}"):
+            yield Static(f"[b]buffers:[/b] {n_buffers}", id=f"device-summary-{self.idx}")
+            with HorizontalGroup():
+                Label("LEDs:")
+                Input(type='integer', value=str(self._device.n_leds), id='led-count', classes="compact-input")
+            with VerticalGroup(id=f"device-{self.idx}-buffers"):
+                for i, (pos, buf) in enumerate(self._device.buffers):
+                    yield CtrlLightBufferControls(i, pos, buf, self)
+            
 
     @on(Input.Changed)
     def on_led_count_changed(self, event: Input.Changed) -> None:
@@ -109,7 +107,7 @@ class CtrlLightDeviceControls(VerticalGroup):
     def _update_summary(self) -> None:
         n_buffers = len(self._device.buffers)
         summary = self.query_one(f"#device-summary-{self.idx}", Static)
-        summary.update(f"[b]Buffers:[/b] {n_buffers}")
+        summary.update(f"[b]buffers:[/b] {n_buffers}")
 
     @on(Collapsible.Expanded)
     def on_expanded(self, event: Collapsible.Expanded) -> None:
@@ -134,14 +132,13 @@ class CtrlLightBufferControls(VerticalGroup):
     def compose(self) -> ComposeResult:
         settings_summary = ', '.join([f"{k}={v}" for k, v in self._light_buffer.settings.items()])
         
-        with Collapsible(title=f"Buffer {self.idx} (pos={self.position})", collapsed=True, id=f"buffer-{self.idx}"):
-            yield Static(f"[b]Settings:[/b] {settings_summary}", id=f"buffer-summary-{self.idx}")
+        with Collapsible(title=f"⊛ buffer {self.idx} (pos={self.position})", collapsed=True, id=f"buffer-{self.idx}"):
+            yield Static(f"[b]settings:[/b] {settings_summary}", id=f"buffer-summary-{self.idx}")
             for name, value in self._light_buffer.settings.items():
                 input_widget = self._make_input(name, value)
-                yield HorizontalGroup(
-                    Static(name, id=f"buf-{self.idx}-{name}-label"),
-                    input_widget,
-                )
+                with HorizontalGroup():
+                    yield Static(name, id=f"buf-{self.idx}-{name}-label")
+                    yield input_widget
 
     def _make_input(self, name: str, value):
         input_id = f"buf-{self.idx}-{name}"

@@ -38,8 +38,8 @@ LIGHT_SETTINGS_HIGH = {
 LIGHT_SETTINGS_HIGH_BEAT = {
     'multiplier': 20,
     'adjust': 0,
-    'color': (5, 0, 1), #BRG 
-    'speed': 7
+    'color': (20, 0, 1), #BRG 
+    'speed': 2
 }
 
 CTRLLER_1_DESTINATIONS = [
@@ -50,14 +50,19 @@ CTRLLER_1_BUFFERS =  {
     'kick_harmony': LightBuffer(n_frames=100, settings=LIGHT_SETTINGS_LOW),
     'kick_beat': LightBuffer(n_frames=100, settings=LIGHT_SETTINGS_LOW_BEAT),
     'snare_signal': LightBuffer(n_frames=20, settings=LIGHT_SETTINGS_HIGH),
+    'snare_beat': LightBuffer(n_frames=20, settings=LIGHT_SETTINGS_HIGH_BEAT),
 }
 
 CTRLLER_1_DEVICES = [
     LightDevice(
         n_leds=144,
         buffers=[
+            (0, CTRLLER_1_BUFFERS['snare_signal']),
+            (0, CTRLLER_1_BUFFERS['snare_beat']),
+            (21, CTRLLER_1_BUFFERS['kick_harmony']),
             (21, CTRLLER_1_BUFFERS['kick_beat']),
             (121, CTRLLER_1_BUFFERS['snare_signal']),
+            (121, CTRLLER_1_BUFFERS['snare_beat']),
         ]
     ),
     LightDevice(

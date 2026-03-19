@@ -74,6 +74,7 @@ class MasterAnalyzer():
             'snare_beat_harmony': BeatHarmonySeparator(
                 self.signal_lookback,
                 min_freq=3000,
+                floor=350,
                 label='snare'
             ),
         }
