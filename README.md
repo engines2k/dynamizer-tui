@@ -71,33 +71,6 @@ You can test the project in its current state by following the steps below.
    python main.py
    ```
 
-
-### Roadmap
-- [x] Terminal spectral analyzer from real-time signal
-- [x] Basic audio analysis and lookback buffer
-- [x] Reliable kick detection function
-- [x] Reliable transient detection function for any frequency range
-- [x] Overall loudness / energy function
-- [x] Event bus for outputs, server feature
-- [ ] Implement outputs listed below (as possible)
-    - [x] energy
-    - [x] low_energy (low_signal)
-    - [x] high_energy (high_signal)
-    - [x] beat_kick
-    - [ ] beat_tom or beat_kick_hz
-    - [x] beat_snare
-    - [ ] beat_density
-    - [ ] brightness
-    - [ ] buzz
-    - [ ] warmth
-    - [ ] chaos
-    - [ ] energy
-    - [ ] mood_state
-      - Based on the previous non-beat related outputs. For example, high energy + high beat_density + high chaos = "aggressive" mood_state
-    - [x] Compatibility with WLED
-    - [ ] Graphical user interface
-
-
 ## Contributing
 
 To anyone who would be interested, any contributions would be **greatly appreciated**.
