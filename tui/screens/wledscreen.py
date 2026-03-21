@@ -2,7 +2,8 @@ from textual import on
 from textual.app import ComposeResult
 from textual.containers import VerticalGroup, HorizontalGroup, Grid
 from textual.widgets import Static, Label, Input, Footer, Collapsible
-from outputs.light_buffer import LightEffectBuffer, LightDevice
+from outputs.light_buffer import LightEffectBuffer
+from outputs.light_device import LightDevice
 from outputs.wled import WLEDController
 from tui.screens.basescreen import BaseScreen
 from tui.widgets import DynamizerLogo

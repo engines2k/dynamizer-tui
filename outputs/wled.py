@@ -27,10 +27,14 @@ class WLEDClient:
     def load_from_file(self, filepath: str):
         with open(filepath, 'r') as in_file:
             config = json.load(in_file)
+        self.effect_lookup = {}
         for buffer_config in config['preset_buffers']:
-            self.effects.append(LightEffectBuffer(**buffer_config))
-        for c_config in config['contollers']:
-            self._load_controller_config(c_config)
+            effect = LightEffectBuffer(**buffer_config)
+            self.effects.append(effect)
+            self.effect_lookup[effect.name] = effect
+        for c_config in config['controllers']:
+            controller = self._load_controller_config(c_config)
+            self.controllers.append(controller)
 
     def _load_controller_config(self, config: dict) -> WLEDController:
         return WLEDController(
@@ -45,7 +49,7 @@ class WLEDClient:
             buffer_type = buffer_config['type']
             effect = None
             if buffer_type == 'preset':
-                effect = self.effects[buffer_config['effect']]
+                effect = self.effect_lookup[buffer_config['effect']]
             elif buffer_type == 'custom':
                 effect = LightEffectBuffer(**buffer_config['settings'])
             else:
@@ -118,7 +122,9 @@ class WLEDController():
         payload.append(LISTEN_TIMEOUT_SECONDS)
 
         for device in self.devices:
-            device.handle_signal(features * self.multiplier)
+            for offset, buffer in device.buffers:
+                feature_value = features[buffer.feature] * self.multiplier
+                buffer.handle_signal(feature_value)
 
         for device in self.devices:
             payload += bytes(device.build_payload())

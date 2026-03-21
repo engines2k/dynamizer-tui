@@ -17,8 +17,8 @@ class LightEffectBuffer:
         self.length = n_frames
         self.buffer = deque(maxlen=self.length)
 
-    def handle_signal(self, features: dict):
-        intensity = self.calc_intensity(features[self.feature])
+    def handle_signal(self, feature_value: float):
+        intensity = self.calc_intensity(feature_value)
         blended_intensities = self._blend_signal(intensity)
         self.buffer.extendleft(blended_intensities)
         self.frame = self._build_frame()
