@@ -1,0 +1,142 @@
+{
+	"preset_effects": {
+		"kick harmony 1": {
+			"feature": "kick_harmony",
+			"length": 98,
+			"settings": {
+				"adjust": -1000,
+				"multiplier": 0.5,
+				"color": [1, 200, 78],
+				"speed": 8
+			}
+		},
+		"kick beat 1": {
+			"feature": "kick_beat",
+			"length": 98,
+			"settings": {
+				"adjust": 0,
+				"multiplier": 55,
+				"color": [255, 25, 0],
+				"speed": 6
+			}
+		},
+		"snare harmony 1": {
+			"feature": "snare_harmony",
+			"length": 18,
+			"settings": {
+				"adjust": 0,
+				"multiplier": 1.25,
+				"color": [100, 30, 15],
+				"speed": 5
+			}
+		},
+		"snare beat 1": {
+			"feature": "snare_beat",
+			"length": 18,
+			"settings": {
+				"adjust": 0,
+				"multiplier": 20,
+				"color": [20, 0, 1],
+				"speed": 2
+			}
+		},
+		"kick harmony 2": {
+			"feature": "kick_harmony",
+			"length": 26,
+			"settings": {
+				"adjust": -1000,
+				"multiplier": 0.5,
+				"color": [1, 200, 78],
+				"speed": 6
+			}
+		},
+		"kick beat 2": {
+			"feature": "kick_beat",
+			"length": 26,
+			"settings": {
+				"adjust": 0,
+				"multiplier": 55,
+				"color": [255, 25, 0],
+				"speed": 6
+			}
+		},
+		"snare harmony 2": {
+			"feature": "snare_harmony",
+			"length": 26,
+			"settings": {
+				"adjust": 0,
+				"multiplier": 1.25,
+				"color": [100, 30, 15],
+				"speed": 5
+			}
+		},
+		"snare beat 2": {
+			"feature": "snare_beat",
+			"length": 26,
+			"settings": {
+				"adjust": 0,
+				"multiplier": 20,
+				"color": [20, 0, 1],
+				"speed": 2
+			}
+		}
+	},
+	"controllers": [
+		{
+			"label": "desk / poster",
+			"destinations": [
+				{ "host": "4.3.2.1", "port": 21324 }
+			],
+			"devices": [
+				{
+					"led_count": 144,
+					"buffers": [
+						{ "offset": 0, "type": "preset", "name": "snare harmony 1" },
+						{ "offset": 0, "type": "preset", "name": "snare beat 1" },
+						{ "offset": 21, "type": "preset", "name": "kick harmony 1" },
+						{ "offset": 21, "type" : "preset", "name": "kick beat 1" },
+						{ "offset": 123, "type" : "preset", "name": "snare harmony 1" },
+						{ "offset": 123, "type" : "preset", "name": "snare beat 1" }
+					]
+				},
+				{
+					"led_count": 144,
+					"buffers": [
+						{ "offset": 0, "type" : "preset", "name": "snare harmony 1" },
+						{ "offset": 0, "type" : "preset", "name": "snare beat 1" },
+						{ "offset": 21, "type" : "preset", "name": "kick harmony 1" },
+						{ "offset": 21, "type" : "preset", "name": "kick beat 1" },
+						{ "offset": 123, "type" : "preset", "name": "snare harmony 1" },
+						{ "offset": 123, "type" : "preset", "name": "snare beat 1" }
+					]
+				}
+			]
+		},
+		{
+			"label": "wall lightning",
+			"destinations": [
+				{ "host": "wled-bfn2.local", "port": 21324 }
+			],
+			"devices": [
+				{
+					"led_count": 31,
+					"buffers": [
+						{ "offset": 4, "effect": "snare signal 2" },
+						{ "offset": 4, "effect": "snare beat 2" },
+						{ "offset": 25, "effect": "kick harmony 2" },
+						{ "offset": 25, "effect": "kick beat 2" }
+					]
+				},
+				{
+					"led_count": 37,
+					"buffers": [
+						{ "offset": 0, "effect": "kick harmony 2" },
+						{ "offset": 0, "effect": "kick beat 2" },
+						{ "offset": 26, "effect": "snare harmony 2" },
+						{ "offset": 26, "effect": "snare beat 2" }
+					]
+				}
+			]
+		}
+	]
+}

@@ -19,7 +19,8 @@ class CoreOptions(VerticalGroup):
     """Core options plus status bar"""
 
     def compose(self) -> ComposeResult:
-        yield Visualizers()
+        #disabled for better perf on laptop
+        #yield Visualizers()
         yield CoreOptionsControls(self)
         yield Static("", id='status')
 

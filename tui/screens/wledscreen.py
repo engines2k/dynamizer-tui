@@ -2,7 +2,7 @@ from textual import on
 from textual.app import ComposeResult
 from textual.containers import VerticalGroup, HorizontalGroup, Grid
 from textual.widgets import Static, Label, Input, Footer, Collapsible
-from outputs.light_buffer import LightBuffer, LightDevice
+from outputs.light_buffer import LightEffectBuffer, LightDevice
 from outputs.wled import WLEDController
 from tui.screens.basescreen import BaseScreen
 from tui.widgets import DynamizerLogo
@@ -38,7 +38,7 @@ class ControllerControls(VerticalGroup):
         self._controller: WLEDController = controller
 
     def compose(self) -> ComposeResult:
-        n_devices = len(self._controller.light_devices)
+        n_devices = len(self._controller.devices)
         controller_hosts = ', '.join([f"{d['host']}:{d['port']}" for d in self._controller.destinations])
         
         with Collapsible(title=f"📟 controller {self.idx}", collapsed=True, id=f"ctrl-{self.idx}"):
@@ -46,7 +46,7 @@ class ControllerControls(VerticalGroup):
             yield Static(f"[b]Devices:[/b] {n_devices}", id=f"ctrl-devices-count-{self.idx}")
             yield CtrlDestinationControls(self._controller.destinations)
             yield VerticalGroup(
-                *[CtrlLightDeviceControls(i, device, self) for i, device in enumerate(self._controller.light_devices)],
+                *[CtrlLightDeviceControls(i, device, self) for i, device in enumerate(self._controller.devices)],
                 id=f"ctrl-{self.idx}-devices"
             )
 
@@ -126,7 +126,7 @@ class CtrlLightBufferControls(VerticalGroup):
         super().__init__()
         self.idx = idx
         self.position = position
-        self._light_buffer: LightBuffer = light_buffer
+        self._light_buffer: LightEffectBuffer = light_buffer
         self._parent_device = parent_device
 
     def compose(self) -> ComposeResult:

@@ -1,132 +1,62 @@
+import json
 import socket
 import time
-from .light_buffer import LightBuffer, LightDevice
+from .light_buffer import LightEffectBuffer
+from .light_device import LightDevice
 from .delayqueue import DelayQueue
 from typing import Dict, List, Tuple
 
 OUTPUT_DELAY = 0#220
 LISTEN_TIMEOUT_SECONDS = 2
 
-LIGHT_SETTINGS_LOW_2 = {
-    'adjust': -1000,
-    'multiplier': .5,
-    'color': (1, 200, 78), #BRG
-    'speed': 6
-}
-
-LIGHT_SETTINGS_LOW = {
-    'adjust': -1000,
-    'multiplier': .5,
-    'color': (1, 200, 78), #BRG
-    'speed': 8
-}
-
-LIGHT_SETTINGS_LOW_BEAT = {
-    'multiplier': 55,
-    'adjust': 0,
-    'color': (255, 25, 0), #BRG 
-    'speed': 7
-}
-
-LIGHT_SETTINGS_HIGH = {
-    'multiplier': 1.25,
-    'adjust': 0,
-    'color': (100, 30, 15), #BRG
-    'speed': 5
-}
-
-LIGHT_SETTINGS_HIGH_BEAT = {
-    'multiplier': 20,
-    'adjust': 0,
-    'color': (20, 0, 1), #BRG 
-    'speed': 2
-}
-
-CTRLLER_1_DESTINATIONS = [
-    { 'host': 'wled-bfn.local', 'port': 21324 },
-]
-
-CTRLLER_1_BUFFERS =  {
-    'kick_harmony': LightBuffer(n_frames=100, settings=LIGHT_SETTINGS_LOW),
-    'kick_beat': LightBuffer(n_frames=100, settings=LIGHT_SETTINGS_LOW_BEAT),
-    'snare_signal': LightBuffer(n_frames=20, settings=LIGHT_SETTINGS_HIGH),
-    'snare_beat': LightBuffer(n_frames=20, settings=LIGHT_SETTINGS_HIGH_BEAT),
-}
-
-CTRLLER_1_DEVICES = [
-    LightDevice(
-        n_leds=144,
-        buffers=[
-            (0, CTRLLER_1_BUFFERS['snare_signal']),
-            (0, CTRLLER_1_BUFFERS['snare_beat']),
-            (21, CTRLLER_1_BUFFERS['kick_harmony']),
-            (21, CTRLLER_1_BUFFERS['kick_beat']),
-            (121, CTRLLER_1_BUFFERS['snare_signal']),
-            (121, CTRLLER_1_BUFFERS['snare_beat']),
-        ]
-    ),
-    LightDevice(
-        n_leds=144,
-        buffers=[
-            (0, CTRLLER_1_BUFFERS['snare_signal']),
-            (21, CTRLLER_1_BUFFERS['kick_harmony']),
-            (21, CTRLLER_1_BUFFERS['kick_beat']),
-            (121, CTRLLER_1_BUFFERS['snare_signal']),
-        ]
-    )
-]
-
-CTRLLER_2_DESTINATIONS = [
-    { 'host': 'wled-bfn2.local', 'port': 21324 }
-]
-
-CTRLLER_2_BUFFERS =  {
-    'kick_harmony': LightBuffer(n_frames=26, settings=LIGHT_SETTINGS_LOW_2),
-    'kick_beat': LightBuffer(n_frames=26, settings=LIGHT_SETTINGS_LOW_BEAT),
-    'snare_signal': LightBuffer(n_frames=26, settings=LIGHT_SETTINGS_HIGH),
-    'snare_beat': LightBuffer(n_frames=26, settings=LIGHT_SETTINGS_HIGH_BEAT),
-}
-
-CTRLLER_2_DEVICES = [
-    LightDevice(
-        n_leds=31,
-        buffers=[
-            (0, CTRLLER_2_BUFFERS['snare_signal']),
-            (4, CTRLLER_2_BUFFERS['snare_signal']),
-            (4, CTRLLER_2_BUFFERS['snare_beat']),
-            (25, CTRLLER_2_BUFFERS['kick_harmony']),
-            (25, CTRLLER_2_BUFFERS['kick_beat']),
-        ]
-    ),
-    LightDevice(
-        n_leds=37,
-        buffers=[
-            (0, CTRLLER_2_BUFFERS['kick_harmony']),
-            (0, CTRLLER_2_BUFFERS['kick_beat']),
-            (26, CTRLLER_2_BUFFERS['snare_signal']),
-            (26, CTRLLER_2_BUFFERS['snare_beat']),
-        ]
-    )
-]
 
 class WLEDClient:
     def __init__(self):
         self.multiplier = 1.3
-        self._destinations = [
-            { 'host': '4.3.2.1', 'port': 21324 },
-            #{ 'host': 'wled-bfn.local', 'port': 21324 },
-            #{ 'host': 'wled-bfn2.local', 'port': 21324 }
-        ]
+        self.effects: List[LightEffectBuffer] = []
+        self.controllers: List[WLEDController] = []
         self._sockets = List[socket.SocketIO]
         self._packet_queue = DelayQueue(delay=OUTPUT_DELAY)
         self._active = False
         self._max_send_rate_hz = 250
         self._min_send_interval = 1.0 / self._max_send_rate_hz
         self._last_send_time = 0
-        self.controllers: List[WLEDController] = [
-            WLEDController(CTRLLER_1_DESTINATIONS, CTRLLER_1_BUFFERS, CTRLLER_1_DEVICES),
-            WLEDController(CTRLLER_2_DESTINATIONS, CTRLLER_2_BUFFERS, CTRLLER_2_DEVICES)
-        ]
+        self.load_from_file('wledconfig.json')
+
+
+    def load_from_file(self, filepath: str):
+        with open(filepath, 'r') as in_file:
+            config = json.load(in_file)
+        for buffer_config in config['preset_buffers']:
+            self.effects.append(LightEffectBuffer(**buffer_config))
+        for c_config in config['contollers']:
+            self._load_controller_config(c_config)
+
+    def _load_controller_config(self, config: dict) -> WLEDController:
+        return WLEDController(
+            name=config['name'],
+            destinations=config['destinations'],
+            devices=[ self._load_device_config(c) for c in config['devices'] ]
+        )
+
+    def _load_device_config(self, config: dict) -> LightDevice:
+        buffers = []
+        for buffer_config in config['buffers']:
+            buffer_type = buffer_config['type']
+            effect = None
+            if buffer_type == 'preset':
+                effect = self.effects[buffer_config['effect']]
+            elif buffer_type == 'custom':
+                effect = LightEffectBuffer(**buffer_config['settings'])
+            else:
+                raise Exception(f'buffer type {buffer_type} invalid, must be "preset" or "custom"!')
+            buffers.append((buffer_config['offset'], effect))
+
+        return LightDevice(
+            led_count=config['led_count'],
+            buffers=buffers
+        )
+
 
     def activate(self):
         self._socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -142,7 +72,7 @@ class WLEDClient:
 
         for device in self.controllers:
             payload = device.build_payload(features)
-            self._packet_queue.push(payload, device.addresses)
+            self._packet_queue.push(payload, device.resolved_addresses)
             ready_payloads = self._packet_queue.get_ready_items()
             for payload in ready_payloads:
                 try:
@@ -165,13 +95,13 @@ class WLEDController():
     multiplier = 1.3 #TODO: MAGIC!
 
     def __init__(self,
+                 name: str,
                  destinations: List[Dict],
-                 device_buffers: Dict[str, LightBuffer],
-                 light_devices: List[LightDevice]):
+                 devices: List[LightDevice]):
+        self.name: str = name
         self.destinations: List[Dict] = destinations or []
-        self.device_buffers: Dict[str, LightBuffer] = device_buffers or {}
-        self.addresses: List[Tuple[str, str]]
-        self.light_devices: List[LightDevice] = light_devices
+        self.devices: List[LightDevice] = devices
+        self.resolved_addresses: List[Tuple[str, str]]
 
 
     def activate(self):
@@ -179,18 +109,18 @@ class WLEDController():
 
 
     def _resolve_addresses(self):
-        self.addresses = []
+        self.resolved_addresses = []
         for dest in self.destinations:
-            self.addresses.append((socket.gethostbyname(dest['host']), dest['port']))
+            self.resolved_addresses.append((socket.gethostbyname(dest['host']), dest['port']))
 
     def build_payload(self, features):
         payload = bytearray()
         payload.append(LISTEN_TIMEOUT_SECONDS)
 
-        for key, buffer in self.device_buffers.items():
-            buffer.handle_signal(features[key] * self.multiplier)
+        for device in self.devices:
+            device.handle_signal(features * self.multiplier)
 
-        for device in self.light_devices:
+        for device in self.devices:
             payload += bytes(device.build_payload())
 
         return payload
