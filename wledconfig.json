@@ -93,7 +93,7 @@
 		{
 			"name": "desk / poster",
 			"destinations": [
-				{ "host": "4.3.2.1", "port": 21324 }
+				{ "host": "wled-bfn.local", "port": 21324 }
 			],
 			"devices": [
 				{

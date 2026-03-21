@@ -1,6 +1,6 @@
 from textual import on
 from textual.app import ComposeResult
-from textual.containers import VerticalGroup, HorizontalGroup, Grid
+from textual.containers import VerticalGroup, HorizontalGroup
 from textual.widgets import Static, Label, Input, Footer, Collapsible
 from outputs.light_buffer import LightEffectBuffer
 from outputs.light_device import LightDevice
@@ -42,7 +42,7 @@ class ControllerControls(VerticalGroup):
         n_devices = len(self._controller.devices)
         controller_hosts = ', '.join([f"{d['host']}:{d['port']}" for d in self._controller.destinations])
         
-        with Collapsible(title=f"📟 controller {self.idx}", collapsed=True, id=f"ctrl-{self.idx}"):
+        with Collapsible(title=f"📟 {self._controller.name}", collapsed=True, id=f"ctrl-{self.idx}"):
             yield Static(f"[b]Hosts:[/b] {controller_hosts}", id=f"ctrl-summary-{self.idx}")
             yield Static(f"[b]Devices:[/b] {n_devices}", id=f"ctrl-devices-count-{self.idx}")
             yield CtrlDestinationControls(self._controller.destinations)
@@ -133,7 +133,7 @@ class CtrlLightBufferControls(VerticalGroup):
     def compose(self) -> ComposeResult:
         settings_summary = ', '.join([f"{k}={v}" for k, v in self._light_buffer.settings.items()])
         
-        with Collapsible(title=f"⊛ buffer {self.idx} (pos={self.position})", collapsed=True, id=f"buffer-{self.idx}"):
+        with Collapsible(title=f"⊛ {self._light_buffer.name} (pos={self.position})", collapsed=True, id=f"buffer-{self.idx}"):
             yield Static(f"[b]settings:[/b] {settings_summary}", id=f"buffer-summary-{self.idx}")
             for name, value in self._light_buffer.settings.items():
                 input_widget = self._make_input(name, value)
