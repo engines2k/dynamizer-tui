@@ -5,7 +5,7 @@ from textual.widgets import Static, Label, Input, Footer, Collapsible
 from outputs.light_buffer import LightEffectBuffer
 from outputs.light_device import LightDevice
 from outputs.wled import WLEDController
-from tui.screens.basescreen import BaseScreen
+from tui.screens.basescreen import BaseScreen, ScreenContent
 from tui.widgets import DynamizerLogo
 
 
@@ -15,7 +15,7 @@ class WLED(BaseScreen):
 
     def compose(self) -> ComposeResult:
         yield DynamizerLogo()
-        yield WLEDOptions()
+        yield ScreenContent(WLEDOptions())
         yield Footer()
 
 
@@ -42,14 +42,14 @@ class ControllerControls(VerticalGroup):
         n_devices = len(self._controller.devices)
         controller_hosts = ', '.join([f"{d['host']}:{d['port']}" for d in self._controller.destinations])
         
-        with Collapsible(title=f"📟 {self._controller.name}", collapsed=True, id=f"ctrl-{self.idx}"):
-            yield Static(f"[b]Hosts:[/b] {controller_hosts}", id=f"ctrl-summary-{self.idx}")
-            yield Static(f"[b]Devices:[/b] {n_devices}", id=f"ctrl-devices-count-{self.idx}")
+        with Collapsible(title=f"📟 controller {self.idx}: {self._controller.name}", collapsed=True, id=f"ctrl-{self.idx}"):
+            yield Static(f"[b]hosts:[/b] {controller_hosts}", id=f"ctrl-summary-{self.idx}")
+            yield Static(f"[b]devices:[/b] {n_devices}", id=f"ctrl-devices-count-{self.idx}")
             yield CtrlDestinationControls(self._controller.destinations)
-            yield VerticalGroup(
-                *[CtrlLightDeviceControls(i, device, self) for i, device in enumerate(self._controller.devices)],
-                id=f"ctrl-{self.idx}-devices"
-            )
+            with VerticalGroup(id=f"ctrl-{self.idx}-devices"):
+                for i, device in enumerate(self._controller.devices):
+                    yield CtrlLightDeviceControls(i, device, self) 
+                
 
     @on(Collapsible.Expanded)
     def on_expanded(self, event: Collapsible.Expanded) -> None:
@@ -70,7 +70,7 @@ class CtrlDestinationControls(VerticalGroup):
     
     def compose(self) -> ComposeResult:
         hosts = ', '.join([f"{d['host']}:{d['port']}" for d in self._destinations])
-        yield Static(f"[b]Destinations:[/b] {hosts}")
+        yield Static(f"[b]destinations:[/b] {hosts}")
 
 
 class CtrlLightDeviceControls(VerticalGroup):
@@ -91,7 +91,7 @@ class CtrlLightDeviceControls(VerticalGroup):
                 Input(type='integer', value=str(self._device.n_leds), id='led-count', classes="compact-input")
             with VerticalGroup(id=f"device-{self.idx}-buffers"):
                 for i, (pos, buf) in enumerate(self._device.buffers):
-                    yield CtrlLightBufferControls(i, pos, buf, self)
+                    yield DeviceBufferControls(i, pos, buf, self)
             
 
     @on(Input.Changed)
@@ -112,16 +112,10 @@ class CtrlLightDeviceControls(VerticalGroup):
 
     @on(Collapsible.Expanded)
     def on_expanded(self, event: Collapsible.Expanded) -> None:
-        parent_containers = self.parent
-        if parent_containers:
-            for sibling in parent_containers.query(CtrlLightDeviceControls):
-                if sibling is not self:
-                    collapsible = sibling.query_one(Collapsible)
-                    if collapsible:
-                        collapsible.collapsed = True
+        collapse_others(self)
 
 
-class CtrlLightBufferControls(VerticalGroup):
+class DeviceBufferControls(HorizontalGroup):
 
     def __init__(self, idx, position, light_buffer, parent_device):
         super().__init__()
@@ -131,21 +125,20 @@ class CtrlLightBufferControls(VerticalGroup):
         self._parent_device = parent_device
 
     def compose(self) -> ComposeResult:
-        settings_summary = ', '.join([f"{k}={v}" for k, v in self._light_buffer.settings.items()])
-        
-        with Collapsible(title=f"⊛ {self._light_buffer.name} (pos={self.position})", collapsed=True, id=f"buffer-{self.idx}"):
-            yield Static(f"[b]settings:[/b] {settings_summary}", id=f"buffer-summary-{self.idx}")
-            for name, value in self._light_buffer.settings.items():
-                input_widget = self._make_input(name, value)
-                with HorizontalGroup():
-                    yield Static(name, id=f"buf-{self.idx}-{name}-label")
-                    yield input_widget
+        with Collapsible(title=f"⊛ @{self.position} - {self._light_buffer.name}", collapsed=True, id=f"buffer-{self.idx}"):
+            with HorizontalGroup():
+                yield Static(f"[b]settings:[/b]")
+                for name, value in self._light_buffer.settings.items():
+                    input_widget = self._make_input(name, value)
+                    with VerticalGroup(classes='device-buffer-settings'):
+                        yield Static(name, id=f"buf-{self.idx}-{name}-label")
+                        yield input_widget
 
     def _make_input(self, name: str, value):
         input_id = f"buf-{self.idx}-{name}"
         if name == 'color':
             display_value = ','.join(str(x) for x in value)
-            return Input(value=display_value, id=input_id, classes="compact-input")
+            return Input(value=display_value, id=input_id, classes="medium-input")
         elif name == 'multiplier':
             return Input(value=str(value), id=input_id, classes="compact-input")
         else:
@@ -161,30 +154,27 @@ class CtrlLightBufferControls(VerticalGroup):
                     if len(parts) == 3:
                         color = tuple(max(0, min(255, int(x.strip()))) for x in parts)
                         self._light_buffer.settings[setting_name] = color
-                        self._update_summary()
                 elif setting_name == 'multiplier':
                     value = float(event.value)
                     if value >= 0:
                         self._light_buffer.settings[setting_name] = value
-                        self._update_summary()
                 else:
                     value = int(event.value)
                     self._light_buffer.settings[setting_name] = value
-                    self._update_summary()
             except ValueError:
                 pass
 
-    def _update_summary(self) -> None:
-        settings_summary = ', '.join([f"{k}={v}" for k, v in self._light_buffer.settings.items()])
-        summary = self.query_one(f"#buffer-summary-{self.idx}", Static)
-        summary.update(f"[b]Settings:[/b] {settings_summary}")
-
     @on(Collapsible.Expanded)
     def on_expanded(self, event: Collapsible.Expanded) -> None:
-        buffers_container = self.parent
-        if buffers_container:
-            for sibling in buffers_container.query(CtrlLightBufferControls):
-                if sibling is not self:
-                    collapsible = sibling.query_one(Collapsible)
-                    if collapsible:
-                        collapsible.collapsed = True
+        collapse_others(self)
+
+
+def collapse_others(self):
+    container = self.parent
+    if container:
+        for sibling in container.query(type(self)):
+            if sibling is not self:
+                collapsible = sibling.query_one(Collapsible)
+                if collapsible:
+                    collapsible.collapsed = True
+

@@ -10,22 +10,17 @@ CtrlLightDeviceControls Collapsible {
    margin-bottom: 1;
 }
 
-CtrlLightBufferControls Collapsible {
+DeviceBufferControls Collapsible {
    margin-bottom: 1;
 }
 
-Input.compact-input {
-   width: 10;
-}
-
-CtrlLightBufferControls HorizontalGroup {
+DeviceBufferControls HorizontalGroup {
    align: left middle;
    margin-bottom: 1;
 }
 
-CtrlLightBufferControls HorizontalGroup Static {
+DeviceBufferControls HorizontalGroup Static {
    width: 16;
-   content-align: right middle;
 }
 
 CtrlLightDeviceControls HorizontalGroup {
@@ -37,3 +32,14 @@ CtrlLightDeviceControls HorizontalGroup Label {
    width: 5;
 }
 
+Input.medium-input {
+	width: 18;
+}
+
+Input.compact-input {
+   width: 10;
+}
+
+.device-buffer-settings {
+	width: 20;
+}
