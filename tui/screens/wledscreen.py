@@ -2,6 +2,7 @@ from textual import on
 from textual.app import ComposeResult
 from textual.containers import VerticalGroup, HorizontalGroup
 from textual.widgets import Static, Label, Input, Footer, Collapsible
+from textual.binding import Binding
 from outputs.light_buffer import LightEffectBuffer
 from outputs.light_device import LightDevice
 from outputs.wled import WLEDController
@@ -12,11 +13,23 @@ from tui.widgets import DynamizerLogo
 class WLED(BaseScreen):
 
     CSS_PATH = '../styles/wledscreen.tcss'
+    BINDINGS = [Binding("escape", "collapse_focused", "collapse", priority=True)]
 
     def compose(self) -> ComposeResult:
         yield DynamizerLogo()
         yield ScreenContent(WLEDOptions())
         yield Footer()
+
+    def action_collapse_focused(self) -> None:
+        ele = self.focused
+        if ele is None:
+            return
+        while ele:
+            if isinstance(ele, Collapsible) and not ele.collapsed:
+                ele.collapsed = True
+                ele._title.focus()
+                break
+            ele = ele.parent
 
 
 class WLEDOptions(VerticalGroup):
