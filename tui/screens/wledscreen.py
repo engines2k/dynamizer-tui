@@ -13,9 +13,6 @@ from tui.widgets import DynamizerLogo
 
 
 class EffectBufferPreview(Static):
-    _instances: list['EffectBufferPreview'] = []
-    _class_timer: Timer | None = None
-
     def __init__(self, effect_buffer: LightEffectBuffer, max_width: int = 60, **kwargs):
         super().__init__(**kwargs)
         self._effect_buffer = effect_buffer
@@ -23,26 +20,16 @@ class EffectBufferPreview(Static):
         self._last_frame = None
         self.layout_refresh = False
         self._cached_chars: list = [None] * max_width
+        self._timer: Timer | None = None
 
     def on_mount(self) -> None:
-        EffectBufferPreview._instances.append(self)
-        if EffectBufferPreview._class_timer is None:
-            EffectBufferPreview._class_timer = self.app.set_interval(
-                1 / 30, EffectBufferPreview._update_all
-            )
+        self._timer = self.app.set_interval(1 / 20, self._update_preview)
         self._update_preview()
 
     def on_unmount(self) -> None:
-        if self in EffectBufferPreview._instances:
-            EffectBufferPreview._instances.remove(self)
-        if not EffectBufferPreview._instances and EffectBufferPreview._class_timer:
-            EffectBufferPreview._class_timer.stop()
-            EffectBufferPreview._class_timer = None
-
-    @classmethod
-    def _update_all(cls) -> None:
-        for widget in cls._instances:
-            widget._update_preview()
+        if self._timer:
+            self._timer.stop()
+            self._timer = None
 
     def _update_preview(self) -> None:
         frame = self._effect_buffer.frame
@@ -129,6 +116,7 @@ class EffectControls(VerticalGroup):
 
     def compose(self) -> ComposeResult:
         with Collapsible(title=f"⚡ {self._effect.name} ({self._effect.feature})", collapsed=True, id=f"effect-{self.idx}"):
+            yield EffectBufferPreview(self._effect, id=f"effect-preview-{self.idx}")
             with HorizontalGroup(classes='device-effect-settings'):
                 yield Static(f"[b]feature:[/b]")
                 yield EffectFeatureSelect(self.idx, self._effect)
@@ -139,7 +127,6 @@ class EffectControls(VerticalGroup):
                     with VerticalGroup():
                         yield Static(name, id=f"effect-{self.idx}-{name}-label")
                         yield input_widget
-        yield EffectBufferPreview(self._effect, id=f"effect-preview-{self.idx}")
 
     def _make_input(self, name: str, value):
         input_id = f"effect-{self.idx}-{name}"

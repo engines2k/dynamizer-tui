@@ -1,5 +1,10 @@
+ScreenContent {
+	align: center middle;
+}
+
 WLEDOptions {
    layout: horizontal;
+   width: 150;
 }
 
 #content-buttons {
@@ -12,6 +17,10 @@ ControllerControls Collapsible {
 
 CtrlLightDeviceControls Collapsible {
    margin-bottom: 1;
+}
+
+EffectBufferPreview {
+	margin-bottom: 1;
 }
 
 DeviceBufferControls HorizontalGroup,
@@ -30,7 +39,7 @@ EffectControls HorizontalGroup Static {
 }
 
 CtrlLightDeviceControls HorizontalGroup {
-   align: left middle;
+   align: left top;
    margin-bottom: 1;
 }
 

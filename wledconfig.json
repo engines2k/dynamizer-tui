@@ -129,8 +129,8 @@
 				{
 					"led_count": 31,
 					"buffers": [
-						{ "offset": 4, "type": "preset", "effect": "snare harmony 2" },
-						{ "offset": 4, "type": "preset", "effect": "snare beat 2" },
+						{ "offset": 0, "type": "preset", "effect": "snare harmony 2" },
+						{ "offset": 0, "type": "preset", "effect": "snare beat 2" },
 						{ "offset": 25, "type": "preset", "effect": "kick harmony 2" },
 						{ "offset": 25, "type": "preset", "effect": "kick beat 2" }
 					]
