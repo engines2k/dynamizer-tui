@@ -4,11 +4,61 @@ from textual.containers import VerticalGroup, HorizontalGroup
 from textual.widget import Widget
 from textual.widgets import Button, ContentSwitcher, Select, Static, Label, Input, Footer, Collapsible
 from textual.binding import Binding
+from textual.timer import Timer
 from outputs.light_buffer import LightEffectBuffer
 from outputs.light_device import LightDevice
 from outputs.wled import WLEDController
 from tui.screens.basescreen import BaseScreen, ScreenContent
 from tui.widgets import DynamizerLogo
+
+
+class EffectBufferPreview(Static):
+    def __init__(self, effect_buffer: LightEffectBuffer, max_width: int = 60, **kwargs):
+        super().__init__(**kwargs)
+        self._effect_buffer = effect_buffer
+        self._max_width = max_width
+        self._last_frame = None
+        self._timer: Timer | None = None
+        self.layout_refresh = False
+        self._cached_chars: list = [None] * max_width
+
+    def on_mount(self) -> None:
+        self._timer = self.set_interval(1 / 15, self._update_preview)
+        self._update_preview()
+
+    def on_unmount(self) -> None:
+        if self._timer:
+            self._timer.stop()
+
+    def _update_preview(self) -> None:
+        frame = self._effect_buffer.frame
+
+        if frame is self._last_frame:
+            return
+
+        self._last_frame = frame
+        self._render_preview(frame)
+
+    def _render_preview(self, frame) -> None:
+        frame_len = len(frame)
+        if frame_len == 0:
+            self.update("")
+            return
+
+        step = max(1, frame_len // self._max_width)
+        chars = self._cached_chars
+        count = 0
+
+        for i in range(0, frame_len - 2, step * 3):
+            if count >= self._max_width:
+                break
+
+            g, r, b = frame[i], frame[i + 1], frame[i + 2]
+            chars[count] = f"[rgb({r},{g},{b})]▄[/]"
+            count += 1
+
+        result = "".join(chars[:count])
+        self.update(result)
 
 
 class WLED(BaseScreen):
@@ -64,6 +114,7 @@ class EffectControls(VerticalGroup):
         self._effect = effect
 
     def compose(self) -> ComposeResult:
+        yield EffectBufferPreview(self._effect, id=f"effect-preview-{self.idx}")
         with Collapsible(title=f"⚡ {self._effect.name} ({self._effect.feature})", collapsed=True, id=f"effect-{self.idx}"):
             with HorizontalGroup(classes='device-effect-settings'):
                 yield Static(f"[b]feature:[/b]")
