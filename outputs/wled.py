@@ -111,12 +111,6 @@ class WLEDController():
     def activate(self):
         self._resolve_addresses()
 
-
-    def _resolve_addresses(self):
-        self.resolved_addresses = []
-        for dest in self.destinations:
-            self.resolved_addresses.append((socket.gethostbyname(dest['host']), dest['port']))
-
     def build_payload(self, features):
         payload = bytearray()
         payload.append(LISTEN_TIMEOUT_SECONDS)
@@ -130,3 +124,9 @@ class WLEDController():
             payload += bytes(device.build_payload())
 
         return payload
+
+    def _resolve_addresses(self):
+        self.resolved_addresses = []
+        for dest in self.destinations:
+            self.resolved_addresses.append((socket.gethostbyname(dest['host']), dest['port']))
+

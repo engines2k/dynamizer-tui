@@ -73,8 +73,11 @@ class MasterAnalyzer():
             ),
             'snare_beat_harmony': BeatHarmonySeparator(
                 self.signal_lookback,
-                min_freq=3000,
-                floor=350,
+                min_freq=2000,
+                max_freq=6000,
+                floor=250,
+                beat_attack=100,
+                beat_decay=15,
                 label='snare'
             ),
         }
