@@ -84,10 +84,37 @@ class PAConnector(AbstractConnector):
             if old_channel_config != new_channel_config:
                 self._publish_input_switch()
             
+            # Determine a valid sample rate for this device. 
+            # Prefer device default, then the configured `_sample_rate`,
+            # then common alternatives.
+            device_default_rate = int(dev_info.get('defaultSampleRate', self._sample_rate))
+            candidate_rates = [device_default_rate, int(self._sample_rate), 48000, 44100, 32000, 22050, 16000, 8000]
+            seen = set()
+            supported_rate = None
+            for r in candidate_rates:
+                if r in seen:
+                    continue
+                seen.add(r)
+                try:
+                    if self._pyaudio_instance.is_format_supported(
+                        rate=r,
+                        input_device=self._active_input,
+                        input_channels=channels,
+                        input_format=pyaudio.paFloat32,
+                    ):
+                        supported_rate = int(r)
+                        break
+                except Exception:
+                    continue
+
+            if supported_rate is None:
+                # Fall back to device default or configured sample rate (may still fail)
+                supported_rate = device_default_rate or int(self._sample_rate)
+
             self._stream = self._pyaudio_instance.open(
                 format=pyaudio.paFloat32,
                 channels=channels,
-                rate=self._sample_rate,
+                rate=supported_rate,
                 input=True,
                 input_device_index=self._active_input,
                 frames_per_buffer=self._buffer_size,
