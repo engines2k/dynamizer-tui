@@ -75,7 +75,7 @@ class MasterAnalyzer():
                 self.signal_lookback,
                 min_freq=2000,
                 max_freq=6000,
-                floor=350,
+                floor=400,
                 beat_attack=200,
                 beat_decay=15,
                 label='snare'
