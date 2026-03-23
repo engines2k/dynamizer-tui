@@ -2,6 +2,10 @@ WLEDOptions {
    layout: horizontal;
 }
 
+#content-buttons {
+	padding: 1 0;
+}
+
 ControllerControls Collapsible {
    margin-bottom: 1;
 }
@@ -10,16 +14,18 @@ CtrlLightDeviceControls Collapsible {
    margin-bottom: 1;
 }
 
-DeviceBufferControls Collapsible {
-   margin-bottom: 1;
-}
-
-DeviceBufferControls HorizontalGroup {
+DeviceBufferControls HorizontalGroup,
+EffectControls HorizontalGroup {
    align: left middle;
    margin-bottom: 1;
 }
 
-DeviceBufferControls HorizontalGroup Static {
+.device-effect-settings Static {
+	height: 2;
+}
+
+DeviceBufferControls HorizontalGroup Static,
+EffectControls HorizontalGroup Static {
    width: 16;
 }
 
@@ -36,10 +42,10 @@ Input.medium-input {
 	width: 18;
 }
 
-Input.compact-input {
-   width: 10;
+Select.medium-input {
+	width: 18;
 }
 
-.device-buffer-settings {
-	width: 20;
+Input.compact-input {
+   width: 10;
 }

@@ -12,7 +12,7 @@ LISTEN_TIMEOUT_SECONDS = 2
 
 class WLEDClient:
     def __init__(self):
-        self.multiplier = 1.3
+        self.multiplier = 1.3 #TODO: MAGIC!
         self.effects: List[LightEffectBuffer] = []
         self.controllers: List[WLEDController] = []
         self._sockets = List[socket.SocketIO]

@@ -1,7 +1,8 @@
 from textual import on
 from textual.app import ComposeResult
 from textual.containers import VerticalGroup, HorizontalGroup
-from textual.widgets import Static, Label, Input, Footer, Collapsible
+from textual.widget import Widget
+from textual.widgets import Button, ContentSwitcher, Select, Static, Label, Input, Footer, Collapsible
 from textual.binding import Binding
 from outputs.light_buffer import LightEffectBuffer
 from outputs.light_device import LightDevice
@@ -40,8 +41,110 @@ class WLEDOptions(VerticalGroup):
     
     def compose(self) -> ComposeResult:
         with VerticalGroup():
-            for (i, controller) in enumerate(self.wled_client.controllers):
-                yield ControllerControls(i, controller) 
+            with HorizontalGroup(id='content-buttons'):
+                yield Button('controllers', id='view-controllers')
+                yield Button('effects', id='view-effects')
+            with ContentSwitcher(initial='view-controllers'):
+                with VerticalGroup(id='view-controllers'):
+                    for (i, controller) in enumerate(self.wled_client.controllers):
+                        yield ControllerControls(i, controller) 
+                with VerticalGroup(id='view-effects'):
+                    for i, effect in enumerate(self.wled_client.effects):
+                        yield EffectControls(i, effect)
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        self.query_one(ContentSwitcher).current = event.button.id  
+
+
+class EffectControls(VerticalGroup):
+
+    def __init__(self, idx: int, effect: LightEffectBuffer):
+        super().__init__()
+        self.idx = idx
+        self._effect = effect
+
+    def compose(self) -> ComposeResult:
+        with Collapsible(title=f"⚡ {self._effect.name} ({self._effect.feature})", collapsed=True, id=f"effect-{self.idx}"):
+            with HorizontalGroup(classes='device-effect-settings'):
+                yield Static(f"[b]feature:[/b]")
+                yield EffectFeatureSelect(self.idx, self._effect)
+            with HorizontalGroup():
+                yield Static(f"[b]settings:[/b]")
+                for name, value in self._effect.settings.items():
+                    input_widget = self._make_input(name, value)
+                    with VerticalGroup():
+                        yield Static(name, id=f"effect-{self.idx}-{name}-label")
+                        yield input_widget
+
+    def _make_input(self, name: str, value):
+        input_id = f"effect-{self.idx}-{name}"
+        if name == 'color':
+            display_value = ','.join(str(x) for x in value)
+            return Input(value=display_value, id=input_id, classes="medium-input")
+        elif name == 'multiplier':
+            return Input(value=str(value), id=input_id, classes="compact-input")
+        else:
+            return Input(type='integer', value=str(value), id=input_id, classes="compact-input")
+
+    @on(Input.Changed)
+    def on_setting_changed(self, event: Input.Changed) -> None:
+        if event.input.id and event.input.id.startswith(f"effect-{self.idx}-"):
+            setting_name = event.input.id.replace(f"effect-{self.idx}-", "")
+            try:
+                if setting_name == 'feature':
+                    self._effect.feature = event.value
+                if setting_name == 'color':
+                    parts = event.value.split(',')
+                    if len(parts) == 3:
+                        color = tuple(max(0, min(255, int(x.strip()))) for x in parts)
+                        self._effect.settings[setting_name] = color
+                elif setting_name == 'multiplier':
+                    value = float(event.value)
+                    if value >= 0:
+                        self._effect.settings[setting_name] = value
+                else:
+                    value = int(event.value)
+                    self._effect.settings[setting_name] = value
+            except ValueError:
+                pass
+
+    @on(Collapsible.Expanded)
+    def on_expanded(self, event: Collapsible.Expanded) -> None:
+        collapse_others(self)
+
+
+class EffectFeatureSelect(Widget):
+    
+    AVAILABLE_FEATURES = [
+        "kick_signal",
+        "kick_beat",
+        "kick_harmony",
+        "snare_signal",
+        "snare_beat",
+        "snare_harmony",
+    ]
+    
+    def __init__(self, idx: int, effect: LightEffectBuffer):
+        super().__init__()
+        self.idx = idx
+        self._effect = effect
+
+    def compose(self) -> ComposeResult:
+        current_feature = self._effect.feature
+        yield Select(
+            options= [(f, f) for f in self.AVAILABLE_FEATURES ],
+            value=current_feature,
+            id=f"effect-{self.idx}-feature",
+            classes="medium-input"
+        )
+
+    @on(Select.Changed)
+    def on_feature_changed(self, event: Select.Changed) -> None:
+        if event.value:
+            self._effect.feature = str(event.value)  # type: ignore[assignment]
+            collapsible = self.ancestors[1]
+            if collapsible and isinstance(collapsible, Collapsible):
+                collapsible.title = f"⚡ {self._effect.name} ({self._effect.feature})"
 
 
 class ControllerControls(VerticalGroup):
@@ -105,7 +208,7 @@ class CtrlLightDeviceControls(VerticalGroup):
             with VerticalGroup(id=f"device-{self.idx}-buffers"):
                 for i, (pos, buf) in enumerate(self._device.buffers):
                     yield DeviceBufferControls(i, pos, buf, self)
-            
+
 
     @on(Input.Changed)
     def on_led_count_changed(self, event: Input.Changed) -> None:
@@ -124,7 +227,7 @@ class CtrlLightDeviceControls(VerticalGroup):
         summary.update(f"[b]buffers:[/b] {n_buffers}")
 
     @on(Collapsible.Expanded)
-    def on_expanded(self, event: Collapsible.Expanded) -> None:
+    def on_expanded(self, _) -> None:
         collapse_others(self)
 
 
