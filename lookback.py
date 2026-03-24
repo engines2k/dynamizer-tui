@@ -4,10 +4,10 @@ import math
 import numpy as np
 
 class Lookback():
-    def __init__(self, duration, sample_rate, hop_size):
+    def __init__(self, duration_ms, sample_rate, hop_size):
         self.sample_rate = sample_rate
         self.hop_size = hop_size
-        self._buffer = deque(maxlen=self._ms_to_buffer_items(duration))
+        self._buffer = deque(maxlen=self._ms_to_buffer_items(duration_ms))
 
     def push(self, item):
         self._buffer.appendleft(item)

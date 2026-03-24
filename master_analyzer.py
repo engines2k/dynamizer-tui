@@ -64,21 +64,21 @@ class MasterAnalyzer():
         self._analyzers = {
             'kick_beat_harmony': BeatHarmonySeparator(
                 self.signal_lookback,
+                label='kick',
                 floor=3000,
                 min_freq=30,
                 max_freq=220,
-                label='kick',
                 beat_attack=100,
-                beat_decay=30
+                beat_decay=30,
             ),
             'snare_beat_harmony': BeatHarmonySeparator(
                 self.signal_lookback,
+                label='snare',
                 min_freq=2000,
                 max_freq=6000,
                 floor=400,
                 beat_attack=200,
                 beat_decay=15,
-                label='snare'
             ),
         }
 
