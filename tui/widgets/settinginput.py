@@ -30,10 +30,11 @@ class SettingInput(Widget):
         self._processor = processor
         self._key = key
         self._id = id
-        self._classes = classes
+        self._input_classes = classes
+        self._initial_value = str(settings[key])
 
     def compose(self) -> ComposeResult:
-        yield Input(value=str(self._settings[self._key]), id=self._id, classes=self._classes)
+        yield Input(value=self._initial_value, id=self._id, classes=self._input_classes)
 
     @on(Input.Changed)
     def on_setting_changed(self, event: Input.Changed) -> None:

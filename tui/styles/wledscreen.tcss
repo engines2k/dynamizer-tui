@@ -58,3 +58,15 @@ Select.medium-input {
 Input.compact-input {
    width: 10;
 }
+
+SettingInput {
+   height: 3;
+}
+
+SettingInput Input.medium-input {
+   width: 18;
+}
+
+SettingInput Input.compact-input {
+   width: 10;
+}

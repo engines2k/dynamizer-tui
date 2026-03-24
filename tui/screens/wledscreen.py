@@ -271,7 +271,7 @@ class DeviceBufferControls(HorizontalGroup):
                 yield Static(f"[b]settings:[/b]")
                 for name, value in self._light_buffer.settings.items():
                     processor = _get_setting_processor(name)
-                    classes = "medium-input" if name == "color" else "compact-input"
+                    classes = "medium-input" if name in {"adjust", "color"} else "compact-input"
                     with VerticalGroup(classes='device-buffer-settings'):
                         yield Static(name, id=f"buf-{self.idx}-{name}-label")
                         yield SettingInput(self._light_buffer.settings, name, processor=processor, classes=classes)
