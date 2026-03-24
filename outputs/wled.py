@@ -2,7 +2,7 @@ import json
 import socket
 import time
 from .light_buffer import LightEffectBuffer
-from .light_device import LightDevice
+from .light_device import LightDevice, DeviceBuffer
 from .delayqueue import DelayQueue
 from typing import Dict, List, Tuple
 
@@ -54,7 +54,7 @@ class WLEDClient:
                 effect = LightEffectBuffer(**buffer_config['settings'])
             else:
                 raise Exception(f'buffer type {buffer_type} invalid, must be "preset" or "custom"!')
-            buffers.append((buffer_config['offset'], effect))
+            buffers.append(DeviceBuffer(buffer_config['offset'], effect))
 
         return LightDevice(
             led_count=config['led_count'],
@@ -116,9 +116,9 @@ class WLEDController():
         payload.append(LISTEN_TIMEOUT_SECONDS)
 
         for device in self.devices:
-            for offset, buffer in device.buffers:
-                feature_value = features[buffer.feature] * self.multiplier
-                buffer.handle_signal(feature_value)
+            for buffer in device.buffers:
+                feature_value = features[buffer.effect.feature] * self.multiplier
+                buffer.effect.handle_signal(feature_value)
 
         for device in self.devices:
             payload += bytes(device.build_payload())

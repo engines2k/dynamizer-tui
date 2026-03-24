@@ -6,6 +6,7 @@ from textual.widgets import Button, ContentSwitcher, Select, Static, Label, Inpu
 from textual.binding import Binding
 from textual.timer import Timer
 from outputs.light_buffer import LightEffectBuffer
+from outputs.light_device import DeviceBuffer
 from outputs.light_device import LightDevice
 from outputs.wled import WLEDController
 from tui.screens.basescreen import BaseScreen, ScreenContent
@@ -231,8 +232,8 @@ class CtrlLightDeviceControls(VerticalGroup):
                 Label("LEDs:")
                 Input(type='integer', value=str(self._device.n_leds), id='led-count', classes="compact-input")
             with VerticalGroup(id=f"device-{self.idx}-buffers"):
-                for i, (pos, buf) in enumerate(self._device.buffers):
-                    yield DeviceBufferControls(i, pos, buf, self)
+                for i, device_buffer in enumerate(self._device.buffers):
+                    yield DeviceBufferControls(i, device_buffer, self)
 
 
     @on(Input.Changed)
@@ -258,23 +259,66 @@ class CtrlLightDeviceControls(VerticalGroup):
 
 class DeviceBufferControls(HorizontalGroup):
 
-    def __init__(self, idx, position, light_buffer, parent_device):
+    def __init__(self, idx, device_buffer: DeviceBuffer, parent_device):
         super().__init__()
         self.idx = idx
-        self.position = position
-        self._light_buffer: LightEffectBuffer = light_buffer
+        self._device_buffer = device_buffer
         self._parent_device = parent_device
+        self._available_effects = self._get_available_effects()
+
+    def _get_available_effects(self):
+        wled_client = self.app.analyzer.outputs['wled'] # type: ignore
+        return wled_client.effects
 
     def compose(self) -> ComposeResult:
-        with Collapsible(title=f"⊛ @{self.position} - {self._light_buffer.name}", collapsed=True, id=f"buffer-{self.idx}"):
+        current_effect = self._device_buffer.effect
+        effect_options = [(e.name, e) for e in self._available_effects]
+        
+        with Collapsible(title=f"⊛ @{self._device_buffer.start} - {self._device_buffer.name}", collapsed=True, id=f"buffer-{self.idx}"):
             with HorizontalGroup():
-                yield Static(f"[b]settings:[/b]")
-                for name, value in self._light_buffer.settings.items():
-                    processor = _get_setting_processor(name)
-                    classes = "medium-input" if name in {"adjust", "color"} else "compact-input"
-                    with VerticalGroup(classes='device-buffer-settings'):
-                        yield Static(name, id=f"buf-{self.idx}-{name}-label")
-                        yield SettingInput(self._light_buffer.settings, name, processor=processor, classes=classes)
+                yield Static(f"[b]effect:[/b]")
+                yield Select(
+                    options=effect_options,
+                    value=current_effect,
+                    id=f"buf-{self.idx}-effect",
+                    classes="medium-input"
+                )
+            with HorizontalGroup():
+                yield Static(f"[b]start:[/b]")
+                yield SettingInput(
+                    self._device_buffer.settings, # type: ignore
+                    "start",
+                    processor=int,
+                    id=f"buf-{self.idx}-start",
+                    classes="compact-input"
+                )
+            with HorizontalGroup():
+                yield Static(f"[b]end:[/b]")
+                yield Static(f"{self._device_buffer.end}", id=f"buf-{self.idx}-end")
+
+    @on(Select.Changed)
+    def on_effect_changed(self, event: Select.Changed) -> None:
+        if event.value:
+            self._device_buffer.effect = event.value  # type: ignore[assignment]
+            self._update_title()
+
+    @on(Input.Changed)
+    def on_start_changed(self, event: Input.Changed) -> None:
+        if event.input.id == f"buf-{self.idx}-start":
+            try:
+                int(event.value)
+                self._update_title()
+                self._update_end()
+            except ValueError:
+                pass
+
+    def _update_title(self) -> None:
+        collapsible = self.query_one(Collapsible)
+        collapsible.title = f"⊛ @{self._device_buffer.start} - {self._device_buffer.name}"
+
+    def _update_end(self) -> None:
+        end_static = self.query_one(f"#buf-{self.idx}-end", Static)
+        end_static.update(f"{self._device_buffer.end}")
 
     @on(Collapsible.Expanded)
     def on_expanded(self, event: Collapsible.Expanded) -> None:
