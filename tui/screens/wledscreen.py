@@ -10,6 +10,7 @@ from outputs.light_device import LightDevice
 from outputs.wled import WLEDController
 from tui.screens.basescreen import BaseScreen, ScreenContent
 from tui.widgets import DynamizerLogo
+from tui.widgets.settinginput import SettingInput, processors
 
 
 class EffectBufferPreview(Static):
@@ -123,42 +124,14 @@ class EffectControls(VerticalGroup):
             with HorizontalGroup():
                 yield Static(f"[b]settings:[/b]")
                 for name, value in self._effect.settings.items():
-                    input_widget = self._make_input(name, value)
+                    processor = _get_setting_processor(name)
+                    classes = "medium-input" if name == "color" else "compact-input"
                     with VerticalGroup():
                         yield Static(name, id=f"effect-{self.idx}-{name}-label")
-                        yield input_widget
-
-    def _make_input(self, name: str, value):
-        input_id = f"effect-{self.idx}-{name}"
-        if name == 'color':
-            display_value = ','.join(str(x) for x in value)
-            return Input(value=display_value, id=input_id, classes="medium-input")
-        elif name == 'multiplier':
-            return Input(value=str(value), id=input_id, classes="compact-input")
-        else:
-            return Input(type='integer', value=str(value), id=input_id, classes="compact-input")
-
-    @on(Input.Changed)
-    def on_setting_changed(self, event: Input.Changed) -> None:
-        if event.input.id and event.input.id.startswith(f"effect-{self.idx}-"):
-            setting_name = event.input.id.replace(f"effect-{self.idx}-", "")
-            try:
-                if setting_name == 'feature':
-                    self._effect.feature = event.value
-                if setting_name == 'color':
-                    parts = event.value.split(',')
-                    if len(parts) == 3:
-                        color = tuple(max(0, min(255, int(x.strip()))) for x in parts)
-                        self._effect.settings[setting_name] = color
-                elif setting_name == 'multiplier':
-                    value = float(event.value)
-                    if value >= 0:
-                        self._effect.settings[setting_name] = value
-                else:
-                    value = int(event.value)
-                    self._effect.settings[setting_name] = value
-            except ValueError:
-                pass
+                        yield SettingInput(self._effect.settings,
+                                           name,
+                                           processor=processor,
+                                           classes=classes)
 
     @on(Collapsible.Expanded)
     def on_expanded(self, event: Collapsible.Expanded) -> None:
@@ -297,44 +270,24 @@ class DeviceBufferControls(HorizontalGroup):
             with HorizontalGroup():
                 yield Static(f"[b]settings:[/b]")
                 for name, value in self._light_buffer.settings.items():
-                    input_widget = self._make_input(name, value)
+                    processor = _get_setting_processor(name)
+                    classes = "medium-input" if name == "color" else "compact-input"
                     with VerticalGroup(classes='device-buffer-settings'):
                         yield Static(name, id=f"buf-{self.idx}-{name}-label")
-                        yield input_widget
-
-    def _make_input(self, name: str, value):
-        input_id = f"buf-{self.idx}-{name}"
-        if name == 'color':
-            display_value = ','.join(str(x) for x in value)
-            return Input(value=display_value, id=input_id, classes="medium-input")
-        elif name == 'multiplier':
-            return Input(value=str(value), id=input_id, classes="compact-input")
-        else:
-            return Input(type='integer', value=str(value), id=input_id, classes="compact-input")
-
-    @on(Input.Changed)
-    def on_setting_changed(self, event: Input.Changed) -> None:
-        if event.input.id and event.input.id.startswith(f"buf-{self.idx}-"):
-            setting_name = event.input.id.replace(f"buf-{self.idx}-", "")
-            try:
-                if setting_name == 'color':
-                    parts = event.value.split(',')
-                    if len(parts) == 3:
-                        color = tuple(max(0, min(255, int(x.strip()))) for x in parts)
-                        self._light_buffer.settings[setting_name] = color
-                elif setting_name == 'multiplier':
-                    value = float(event.value)
-                    if value >= 0:
-                        self._light_buffer.settings[setting_name] = value
-                else:
-                    value = int(event.value)
-                    self._light_buffer.settings[setting_name] = value
-            except ValueError:
-                pass
+                        yield SettingInput(self._light_buffer.settings, name, processor=processor, classes=classes)
 
     @on(Collapsible.Expanded)
     def on_expanded(self, event: Collapsible.Expanded) -> None:
         collapse_others(self)
+
+
+def _get_setting_processor(name: str):
+    if name == "color":
+        return processors.color
+    elif name == "multiplier":
+        return processors.postive_float
+    else:
+        return int
 
 
 def collapse_others(self):
