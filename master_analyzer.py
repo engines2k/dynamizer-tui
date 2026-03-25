@@ -1,15 +1,14 @@
-import time
-from typing import Dict, List, Callable
-from analyzers import AbstractAnalyzer, BeatHarmonySeparator
-import outputs
-from outputs.abstract_visualizer import AbstractVisualizer
-from audio_connectors import AudioConnectorFactory
-from weightings import a_weighting
-from lookback import Lookback
 import numpy as np
-from scipy.signal import ZoomFFT
+import time
 
-__all__ = ["masteranalyzer"]
+from audio_connectors import AudioConnectorFactory
+from analyzers import AbstractAnalyzer, BeatHarmonyAnalyzer
+from outputs import AbstractVisualizer, WLEDClient, AmplitudeVisualizer
+from lookback import Lookback
+from scipy.signal import ZoomFFT
+from typing import Dict, List, Callable
+from weightings import a_weighting
+
 
 class MasterAnalyzer():
     max_failures = 3
@@ -57,8 +56,8 @@ class MasterAnalyzer():
 
     def _init_outputs(self):
         self.outputs = {
-            "wled": outputs.wled.WLEDClient(self.audio_connector.n_channels),
-            "terminalwave": outputs.SignalVisualizer('kick_signal'),
+            "wled": WLEDClient(self.audio_connector.n_channels),
+            "terminalwave": AmplitudeVisualizer('kick_signal'),
         }
 
     def add_output(self, label: str, output: AbstractVisualizer):
@@ -72,7 +71,7 @@ class MasterAnalyzer():
         for i in range(self.audio_connector.n_channels):
             self._analyzer_groups.append(
                 {
-                'kick_beat_harmony': BeatHarmonySeparator(
+                'kick_beat_harmony': BeatHarmonyAnalyzer(
                     self.signal_lookbacks[i],
                     label='kick',
                     floor=3000,
@@ -81,7 +80,7 @@ class MasterAnalyzer():
                     beat_attack=100,
                     beat_decay=26,
                 ),
-                'snare_beat_harmony': BeatHarmonySeparator(
+                'snare_beat_harmony': BeatHarmonyAnalyzer(
                     self.signal_lookbacks[i],
                     label='snare',
                     min_freq=2000,

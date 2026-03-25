@@ -1,8 +1,8 @@
-from typing import Callable, List, Optional
+from typing import Callable, List
 from processors import AdaptiveThreshold
-from .abstract_visualizer import AbstractVisualizer
+from .abstractvisualizer import AbstractVisualizer
 
-class SignalVisualizer(AbstractVisualizer):
+class AmplitudeVisualizer(AbstractVisualizer):
 
     def __init__(self, feature_key: str, output_width=40, channel: int = 0):
         self._threshold = AdaptiveThreshold(decay_rate=1)

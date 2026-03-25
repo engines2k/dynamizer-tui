@@ -1,23 +1,24 @@
 import json
 import socket
 import time
+
+from outputs.abstract_visualizer import AbstractVisualizer
 from .light_buffer import LightEffectBuffer
 from .light_device import LightDevice, DeviceBuffer
 from .delayqueue import DelayQueue
 from typing import Dict, List, Optional, Tuple
 
-OUTPUT_DELAY = 0#220
+OUTPUT_DELAY_MS = 0#220
 LISTEN_TIMEOUT_SECONDS = 2
 
-
-class WLEDClient:
+class WLEDClient(AbstractVisualizer):
     def __init__(self, n_channels: int = 1):
         self.multiplier = 1.3
         self.n_channels = n_channels
         self.effects: List[LightEffectBuffer] = []
         self.controllers: List[WLEDController] = []
         self._sockets = List[socket.SocketIO]
-        self._packet_queue = DelayQueue(delay=OUTPUT_DELAY)
+        self._packet_queue = DelayQueue(delay=OUTPUT_DELAY_MS)
         self._active = False
         self._max_send_rate_hz = 250
         self._min_send_interval = 1.0 / self._max_send_rate_hz
