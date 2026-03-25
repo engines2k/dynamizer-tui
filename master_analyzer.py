@@ -69,7 +69,7 @@ class MasterAnalyzer():
                 min_freq=30,
                 max_freq=220,
                 beat_attack=100,
-                beat_decay=30,
+                beat_decay=26,
             ),
             'snare_beat_harmony': BeatHarmonySeparator(
                 self.signal_lookback,
