@@ -8,6 +8,14 @@ class DeviceBuffer:
         self.effect = effect
 
     @property
+    def channel(self) -> int:
+        return self.effect.channel
+
+    @channel.setter
+    def channel(self, value: int) -> None:
+        self.effect.channel = value
+
+    @property
     def start(self) -> int:
         return self._start
 

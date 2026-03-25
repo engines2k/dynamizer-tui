@@ -21,11 +21,13 @@ class MasterAnalyzer():
 
     def __init__(self):
         self._failures = 0
-        self._inbuffers: List[np.ndarray] = []
         self._pause_processing = False
         self._callbacks: List[Callable] = []
         self._last_callback_time = 0.0
         self.audio_connector = AudioConnectorFactory.create(self._process_callback)
+        self._inbuffers: List[np.ndarray] = [
+            np.array([]) for n in range(self.audio_connector.n_channels)
+        ]
         self.signal_lookbacks: List[Lookback] = []
         self._sensitivity = 1.0
         self.sample_rate = 44100
@@ -34,6 +36,10 @@ class MasterAnalyzer():
 
         self._signal_windower = np.hanning(self.window_size)
         self._init_fft()
+        self.signal_lookbacks = [
+            Lookback(self.lookback_duration_ms, self.sample_rate, self.hop_size)
+            for n in range(self.audio_connector.n_channels)
+        ]
         self._init_outputs()
         self._init_processors()
 
@@ -51,7 +57,7 @@ class MasterAnalyzer():
 
     def _init_outputs(self):
         self.outputs = {
-            "wled": outputs.wled.WLEDClient(),
+            "wled": outputs.wled.WLEDClient(self.audio_connector.n_channels),
             "terminalwave": outputs.SignalVisualizer('kick_signal'),
         }
 
@@ -137,15 +143,12 @@ class MasterAnalyzer():
         result = []
         for i, inbuffer in enumerate(self._inbuffers):
             window = inbuffer[:self.window_size]
-            inbuffer = inbuffer[self.hop_size:]
+            self._inbuffers[i] = inbuffer[self.hop_size:]
             freqs = self._analyze_signal_window(window)
-            features = self._analyze_freqs_features(freqs)
-            result.append({
-                'freqs': freqs,
-                'features': features,
-            })
-            self._output_result(features)
+            features = self._analyze_freqs_features(freqs, i)
+            result.append(features)
             self.signal_lookbacks[i].push(freqs)
+        self._output_result(result)
 
     def _analyze_signal_window(self, x):
         x = self._apply_window_function(x)
@@ -153,15 +156,12 @@ class MasterAnalyzer():
         freqs = self._transform_freqs(freqs)
         return freqs
 
-    def _analyze_freqs_features(self, freqs):
-        result = []
-        for group in self._analyzer_groups:
-            features = {}
-            for analyzer in group.values():
-                feature_set = analyzer.analyze(self._freq_bins, freqs)
-                features.update(feature_set)
-            result.append(features)
-        return result
+    def _analyze_freqs_features(self, freqs, channel_idx: int):
+        features = {}
+        for analyzer in self._analyzer_groups[channel_idx].values():
+            feature_set = analyzer.analyze(self._freq_bins, freqs)
+            features.update(feature_set)
+        return features
 
     def _apply_window_function(self, x):
         return x * self._signal_windower

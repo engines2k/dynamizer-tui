@@ -1,13 +1,25 @@
 from collections import deque
 
 class LightEffectBuffer:
-    def __init__(self, name: str, feature: str, length: int, settings: dict):
+    def __init__(self, name: str, feature: str, length: int, settings: dict, channel: int = 0):
         self.name = name
         self.feature = feature
         self.length = length
         self.buffer = deque(maxlen=self.length)
         self.settings = settings
         self.frame = LightBufferFrame()
+        self._channel = channel
+
+    @property
+    def channel(self) -> int:
+        return self._channel
+
+    @channel.setter
+    def channel(self, value: int) -> None:
+        if value < 0:
+            print(f"Warning: LightEffectBuffer '{self.name}' requested channel {value} (negative). Ignoring.")
+            return
+        self._channel = value
 
     @property
     def size(self):

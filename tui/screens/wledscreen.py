@@ -12,6 +12,7 @@ from outputs.wled import WLEDController
 from tui.screens.basescreen import BaseScreen, ScreenContent
 from tui.widgets import DynamizerLogo
 from tui.widgets.settinginput import SettingInput, processors
+from tui.widgets.settingselect import SettingSelect
 
 
 class EffectBufferPreview(Static):
@@ -116,9 +117,24 @@ class EffectControls(VerticalGroup):
         self.idx = idx
         self._effect = effect
 
+    @property
+    def n_channels(self):
+        wled_client = self.app.analyzer.outputs['wled']  # type: ignore
+        return wled_client.n_channels
+
     def compose(self) -> ComposeResult:
+        channel_options = [(str(i), i) for i in range(self.n_channels)]
+        
         with Collapsible(title=f"⚡ {self._effect.name} ({self._effect.feature})", collapsed=True, id=f"effect-{self.idx}"):
             yield EffectBufferPreview(self._effect, id=f"effect-preview-{self.idx}")
+            with HorizontalGroup(classes='device-effect-settings'):
+                yield Static(f"[b]channel:[/b]")
+                yield Select(
+                    options=channel_options,
+                    value=self._effect.channel,
+                    id=f"effect-{self.idx}-channel",
+                    classes="compact-input"
+                )
             with HorizontalGroup(classes='device-effect-settings'):
                 yield Static(f"[b]feature:[/b]")
                 yield EffectFeatureSelect(self.idx, self._effect)
@@ -133,6 +149,12 @@ class EffectControls(VerticalGroup):
                                            name,
                                            processor=processor,
                                            classes=classes)
+
+    @on(Select.Changed)
+    def on_channel_changed(self, event: Select.Changed) -> None:
+        if event.select.id == f"effect-{self.idx}-channel":
+            if event.value is not None and hasattr(event.value, '__int__'):
+                self._effect.channel = int(event.value)
 
     @on(Collapsible.Expanded)
     def on_expanded(self, event: Collapsible.Expanded) -> None:
@@ -180,17 +202,39 @@ class ControllerControls(VerticalGroup):
         self.idx = idx
         self._controller: WLEDController = controller
 
+    @property
+    def n_channels(self):
+        wled_client = self.app.analyzer.outputs['wled']  # type: ignore
+        return wled_client.n_channels
+
     def compose(self) -> ComposeResult:
         n_devices = len(self._controller.devices)
         controller_hosts = ', '.join([f"{d['host']}:{d['port']}" for d in self._controller.destinations])
         
+        channel_options = [(str(i), i) for i in range(self.n_channels)]
+        
         with Collapsible(title=f"📟 controller {self.idx}: {self._controller.name}", collapsed=True, id=f"ctrl-{self.idx}"):
             yield Static(f"[b]hosts:[/b] {controller_hosts}", id=f"ctrl-summary-{self.idx}")
             yield Static(f"[b]devices:[/b] {n_devices}", id=f"ctrl-devices-count-{self.idx}")
+            with HorizontalGroup():
+                yield Static(f"[b]channel:[/b]")
+                yield Select(
+                    options=channel_options,
+                    value=self._controller.channel,
+                    id=f"ctrl-{self.idx}-channel",
+                    classes="compact-input"
+                )
             yield CtrlDestinationControls(self._controller.destinations)
             with VerticalGroup(id=f"ctrl-{self.idx}-devices"):
                 for i, device in enumerate(self._controller.devices):
                     yield CtrlLightDeviceControls(i, device, self) 
+
+
+    @on(Select.Changed)
+    def on_channel_changed(self, event: Select.Changed) -> None:
+        if event.select.id == f"ctrl-{self.idx}-channel":
+            if event.value is not None and hasattr(event.value, '__int__'):
+                self._controller.channel = int(event.value) 
                 
 
     @on(Collapsible.Expanded)
@@ -270,6 +314,11 @@ class DeviceBufferControls(HorizontalGroup):
         wled_client = self.app.analyzer.outputs['wled'] # type: ignore
         return wled_client.effects
 
+    @property
+    def n_channels(self):
+        wled_client = self.app.analyzer.outputs['wled']  # type: ignore
+        return wled_client.n_channels
+
     def compose(self) -> ComposeResult:
         current_effect = self._device_buffer.effect
         effect_options = [(e.name, e) for e in self._available_effects]
@@ -298,9 +347,10 @@ class DeviceBufferControls(HorizontalGroup):
 
     @on(Select.Changed)
     def on_effect_changed(self, event: Select.Changed) -> None:
-        if event.value:
-            self._device_buffer.effect = event.value  # type: ignore[assignment]
-            self._update_title()
+        if event.select.id == f"buf-{self.idx}-effect":
+            if event.value:
+                self._device_buffer.effect = event.value  # type: ignore[assignment]
+                self._update_title()
 
     @on(Input.Changed)
     def on_start_changed(self, event: Input.Changed) -> None:

@@ -4,15 +4,16 @@ import time
 from .light_buffer import LightEffectBuffer
 from .light_device import LightDevice, DeviceBuffer
 from .delayqueue import DelayQueue
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 OUTPUT_DELAY = 0#220
 LISTEN_TIMEOUT_SECONDS = 2
 
 
 class WLEDClient:
-    def __init__(self):
-        self.multiplier = 1.3 #TODO: MAGIC!
+    def __init__(self, n_channels: int = 1):
+        self.multiplier = 1.3
+        self.n_channels = n_channels
         self.effects: List[LightEffectBuffer] = []
         self.controllers: List[WLEDController] = []
         self._sockets = List[socket.SocketIO]
@@ -50,11 +51,12 @@ class WLEDClient:
             effect = None
             if buffer_type == 'preset':
                 effect = self.effect_lookup[buffer_config['effect']]
+                effect.channel = buffer_config.get('channel', 0)
             elif buffer_type == 'custom':
-                effect = LightEffectBuffer(**buffer_config['settings'])
+                effect = LightEffectBuffer(**buffer_config['settings'], channel=buffer_config.get('channel', 0))
             else:
                 raise Exception(f'buffer type {buffer_type} invalid, must be "preset" or "custom"!')
-            buffers.append(DeviceBuffer(buffer_config['offset'], effect))
+            buffers.append(DeviceBuffer(start=buffer_config['offset'], effect=effect))
 
         return LightDevice(
             led_count=config['led_count'],
@@ -74,9 +76,9 @@ class WLEDClient:
         if not self._ready_to_send:
             return
 
-        for device in self.controllers:
-            payload = device.build_payload(features)
-            self._packet_queue.push(payload, device.resolved_addresses)
+        for controller in self.controllers:
+            payload = controller.build_payload(features)
+            self._packet_queue.push(payload, controller.resolved_addresses)
             ready_payloads = self._packet_queue.get_ready_items()
             for payload in ready_payloads:
                 try:
@@ -96,15 +98,15 @@ class WLEDClient:
         return True
 
 class WLEDController():
-    multiplier = 1.3 #TODO: MAGIC!
+    multiplier = 1.3
 
     def __init__(self,
                  name: str,
-                 destinations: List[Dict],
-                 devices: List[LightDevice]):
+                 destinations: Optional[List[Dict]] = None,
+                 devices: Optional[List[LightDevice]] = None):
         self.name: str = name
         self.destinations: List[Dict] = destinations or []
-        self.devices: List[LightDevice] = devices
+        self.devices: List[LightDevice] = devices or []
         self.resolved_addresses: List[Tuple[str, str]]
 
 
@@ -115,9 +117,17 @@ class WLEDController():
         payload = bytearray()
         payload.append(LISTEN_TIMEOUT_SECONDS)
 
+        is_list = isinstance(features, list)
+        #TODO: clean up this smells odd
         for device in self.devices:
             for buffer in device.buffers:
-                feature_value = features[buffer.effect.feature] * self.multiplier
+                if is_list and buffer.channel < len(features):
+                    channel_features = features[buffer.channel]
+                elif is_list:
+                    channel_features = features[0]
+                else:
+                    channel_features = features
+                feature_value = channel_features[buffer.effect.feature] * self.multiplier
                 buffer.effect.handle_signal(feature_value)
 
         for device in self.devices:

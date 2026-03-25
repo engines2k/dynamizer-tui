@@ -15,7 +15,7 @@ class JACKConnector(AbstractConnector):
 
     def __init__(self, process_callback) -> None:
         self.input_is_aux = False
-        self.n_channels: int
+        self.n_channels: int = 2
         self.active = False
 
         self._client = jack.Client("dynamizer")

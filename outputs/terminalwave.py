@@ -1,13 +1,14 @@
-from typing import Callable, List
+from typing import Callable, List, Optional
 from processors import AdaptiveThreshold
 from .abstract_visualizer import AbstractVisualizer
 
 class SignalVisualizer(AbstractVisualizer):
 
-    def __init__(self, feature_key: str, output_width=40):
+    def __init__(self, feature_key: str, output_width=40, channel: int = 0):
         self._threshold = AdaptiveThreshold(decay_rate=1)
         self._output_width = output_width
         self._key = feature_key
+        self._channel = channel
         self.result = ''
         self._callbacks: List[Callable] = []
 
@@ -18,6 +19,8 @@ class SignalVisualizer(AbstractVisualizer):
         pass
 
     def send(self, features):
+        if isinstance(features, list):
+            features = features[self._channel]
         signal = features[self._key]
         self._threshold.track(signal)
         ceiling = self._threshold.current + .00000000000001
@@ -28,10 +31,15 @@ class SignalVisualizer(AbstractVisualizer):
 
 class FrequencyVisualizer(AbstractVisualizer):
 
+    def __init__(self, channel: int = 0):
+        self._channel = channel
+
     def activate(self):
         pass
 
     def send(self, features):
+        if isinstance(features, list):
+            features = features[self._channel]
         res = ""
         for i in range(0, len(features['freqs']), 2):
             strength = int(features['freqs'][i])

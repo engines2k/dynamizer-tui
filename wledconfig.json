@@ -23,9 +23,10 @@
 			}
 		},
 		{
-			"name": "snare signal 1",
+			"name": "snare signal 1 left",
 			"feature": "snare_signal",
 			"length": 18,
+			"channel": 0,
 			"settings": {
 				"adjust": 0,
 				"multiplier": 1.25,
@@ -34,9 +35,34 @@
 			}
 		},
 		{
-			"name": "snare beat 1",
+			"name": "snare signal 1 right",
+			"feature": "snare_signal",
+			"length": 18,
+			"channel": 1,
+			"settings": {
+				"adjust": 0,
+				"multiplier": 1.25,
+				"color": [100, 30, 15],
+				"speed": 5
+			}
+		},
+		{
+			"name": "snare beat 1 left",
 			"feature": "snare_beat",
 			"length": 18,
+			"channel": 0,
+			"settings": {
+				"adjust": 0,
+				"multiplier": 20,
+				"color": [20, 0, 1],
+				"speed": 2
+			}
+		},
+		{
+			"name": "snare beat 1 right",
+			"feature": "snare_beat",
+			"length": 18,
+			"channel": 1,
 			"settings": {
 				"adjust": 0,
 				"multiplier": 20,
@@ -99,23 +125,23 @@
 				{
 					"led_count": 144,
 					"buffers": [
-						{ "offset": 0, "type": "preset", "effect": "snare signal 1" },
-						{ "offset": 0, "type": "preset", "effect": "snare beat 1" },
-						{ "offset": 21, "type": "preset", "effect": "kick signal 1" },
-						{ "offset": 21, "type": "preset", "effect": "kick beat 1" },
-						{ "offset": 123, "type": "preset", "effect": "snare signal 1" },
-						{ "offset": 123, "type": "preset", "effect": "snare beat 1" }
+						{ "channel": 1, "offset": 0, "type": "preset", "effect": "snare signal 1 left" },
+						{ "channel": 1, "offset": 0, "type": "preset", "effect": "snare beat 1 left" },
+						{ "channel": 0, "offset": 21, "type": "preset", "effect": "kick signal 1" },
+						{ "channel": 0, "offset": 21, "type": "preset", "effect": "kick beat 1" },
+						{ "channel": 0, "offset": 123, "type": "preset", "effect": "snare signal 1 right" },
+						{ "channel": 0, "offset": 123, "type": "preset", "effect": "snare beat 1 right" }
 					]
 				},
 				{
 					"led_count": 144,
 					"buffers": [
-						{ "offset": 0, "type": "preset", "effect": "snare signal 1" },
-						{ "offset": 0, "type": "preset", "effect": "snare beat 1" },
-						{ "offset": 21, "type": "preset", "effect": "kick signal 1" },
-						{ "offset": 21, "type": "preset", "effect": "kick beat 1" },
-						{ "offset": 123, "type": "preset", "effect": "snare signal 1" },
-						{ "offset": 123, "type": "preset", "effect": "snare beat 1" }
+						{ "channel": 1, "offset": 0, "type": "preset", "effect": "snare signal 1 left" },
+						{ "channel": 1, "offset": 0, "type": "preset", "effect": "snare beat 1 left" },
+						{ "channel": 0, "offset": 21, "type": "preset", "effect": "kick signal 1" },
+						{ "channel": 0, "offset": 21, "type": "preset", "effect": "kick beat 1" },
+						{ "channel": 0, "offset": 123, "type": "preset", "effect": "snare signal 1 right" },
+						{ "channel": 0, "offset": 123, "type": "preset", "effect": "snare beat 1 right" }
 					]
 				}
 			]
@@ -129,19 +155,19 @@
 				{
 					"led_count": 31,
 					"buffers": [
-						{ "offset": 0, "type": "preset", "effect": "snare signal 2" },
-						{ "offset": 0, "type": "preset", "effect": "snare beat 2" },
-						{ "offset": 25, "type": "preset", "effect": "kick signal 2" },
-						{ "offset": 25, "type": "preset", "effect": "kick beat 2" }
+						{ "channel": 0, "offset": 0, "type": "preset", "effect": "snare signal 2" },
+						{ "channel": 0, "offset": 0, "type": "preset", "effect": "snare beat 2" },
+						{ "channel": 0, "offset": 25, "type": "preset", "effect": "kick signal 2" },
+						{ "channel": 0, "offset": 25, "type": "preset", "effect": "kick beat 2" }
 					]
 				},
 				{
 					"led_count": 37,
 					"buffers": [
-						{ "offset": 0, "type": "preset", "effect": "kick signal 2" },
-						{ "offset": 0, "type": "preset", "effect": "kick beat 2" },
-						{ "offset": 26, "type": "preset", "effect": "snare signal 2" },
-						{ "offset": 26, "type": "preset", "effect": "snare beat 2" }
+						{ "channel": 1, "offset": 0, "type": "preset", "effect": "kick signal 2" },
+						{ "channel": 1, "offset": 0, "type": "preset", "effect": "kick beat 2" },
+						{ "channel": 1, "offset": 26, "type": "preset", "effect": "snare signal 2" },
+						{ "channel": 1, "offset": 26, "type": "preset", "effect": "snare beat 2" }
 					]
 				}
 			]
