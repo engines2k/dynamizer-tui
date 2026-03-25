@@ -14,8 +14,8 @@ BaseScreen #status {
 }
 
 ScreenContent {
-	content-align: center middle;
-	padding: 2 5;
+	content-align: center top;
+	padding: 2 2;
 }
 
 VolumeControl {

@@ -1,0 +1,150 @@
+{
+	"preset_buffers": [
+		{
+			"name": "kick signal 1",
+			"feature": "kick_signal",
+			"length": 98,
+			"settings": {
+				"adjust": -1000,
+				"multiplier": 0.5,
+				"color": [1, 200, 78],
+				"speed": 8
+			}
+		},
+		{
+			"name": "kick beat 1",
+			"feature": "kick_beat",
+			"length": 98,
+			"settings": {
+				"adjust": 0,
+				"multiplier": 55,
+				"color": [255, 25, 0],
+				"speed": 6
+			}
+		},
+		{
+			"name": "snare signal 1",
+			"feature": "snare_signal",
+			"length": 18,
+			"settings": {
+				"adjust": 0,
+				"multiplier": 1.25,
+				"color": [100, 30, 15],
+				"speed": 5
+			}
+		},
+		{
+			"name": "snare beat 1",
+			"feature": "snare_beat",
+			"length": 18,
+			"settings": {
+				"adjust": 0,
+				"multiplier": 20,
+				"color": [20, 0, 1],
+				"speed": 2
+			}
+		},
+		{
+			"name": "kick signal 2",
+			"feature": "kick_signal",
+			"length": 26,
+			"settings": {
+				"adjust": -1000,
+				"multiplier": 0.5,
+				"color": [1, 200, 78],
+				"speed": 6
+			}
+		},
+		{
+			"name": "kick beat 2",
+			"feature": "kick_beat",
+			"length": 26,
+			"settings": {
+				"adjust": 0,
+				"multiplier": 55,
+				"color": [255, 25, 0],
+				"speed": 6
+			}
+		},
+		{
+			"name": "snare signal 2",
+			"feature": "snare_signal",
+			"length": 26,
+			"settings": {
+				"adjust": 100,
+				"multiplier": 2,
+				"color": [30, 25, 25],
+				"speed": 5
+			}
+		},
+		{
+			"name": "snare beat 2",
+			"feature": "snare_beat",
+			"length": 26,
+			"settings": {
+				"adjust": 0,
+				"multiplier": 20,
+				"color": [20, 0, 1],
+				"speed": 2
+			}
+		}
+	],
+	"controllers": [
+		{
+			"name": "desk / poster",
+			"destinations": [
+				{ "host": "wled-bfn.local", "port": 21324 }
+			],
+			"devices": [
+				{
+					"led_count": 144,
+					"buffers": [
+						{ "offset": 0, "type": "preset", "effect": "snare signal 1" },
+						{ "offset": 0, "type": "preset", "effect": "snare beat 1" },
+						{ "offset": 21, "type": "preset", "effect": "kick signal 1" },
+						{ "offset": 21, "type": "preset", "effect": "kick beat 1" },
+						{ "offset": 123, "type": "preset", "effect": "snare signal 1" },
+						{ "offset": 123, "type": "preset", "effect": "snare beat 1" }
+					]
+				},
+				{
+					"led_count": 144,
+					"buffers": [
+						{ "offset": 0, "type": "preset", "effect": "snare signal 1" },
+						{ "offset": 0, "type": "preset", "effect": "snare beat 1" },
+						{ "offset": 21, "type": "preset", "effect": "kick signal 1" },
+						{ "offset": 21, "type": "preset", "effect": "kick beat 1" },
+						{ "offset": 123, "type": "preset", "effect": "snare signal 1" },
+						{ "offset": 123, "type": "preset", "effect": "snare beat 1" }
+					]
+				}
+			]
+		},
+		{
+			"name": "wall lightning",
+			"destinations": [
+				{ "host": "wled-bfn2.local", "port": 21324 }
+			],
+			"devices": [
+				{
+					"led_count": 31,
+					"buffers": [
+						{ "offset": 0, "type": "preset", "effect": "snare signal 2" },
+						{ "offset": 0, "type": "preset", "effect": "snare beat 2" },
+						{ "offset": 25, "type": "preset", "effect": "kick signal 2" },
+						{ "offset": 25, "type": "preset", "effect": "kick beat 2" }
+					]
+				},
+				{
+					"led_count": 37,
+					"buffers": [
+						{ "offset": 0, "type": "preset", "effect": "kick signal 2" },
+						{ "offset": 0, "type": "preset", "effect": "kick beat 2" },
+						{ "offset": 26, "type": "preset", "effect": "snare signal 2" },
+						{ "offset": 26, "type": "preset", "effect": "snare beat 2" }
+					]
+				}
+			]
+		}
+	]
+}

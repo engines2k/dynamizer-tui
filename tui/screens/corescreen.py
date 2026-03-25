@@ -1,9 +1,9 @@
 from textual import on
-from textual.widgets import Static, Label, Select, Switch, Footer, Sparkline
+from textual.widgets import Static, Select, Switch, Footer
 from textual.app import ComposeResult
 from textual.containers import VerticalGroup, HorizontalGroup
 from tui.screens.basescreen import BaseScreen, ScreenContent
-from tui.widgets import AuxControl, VolumeControl, DynamizerLogo
+from tui.widgets import AuxControl, VolumeControl, DynamizerLogo, Visualizers
 
 
 class CORE(BaseScreen):
@@ -19,36 +19,10 @@ class CoreOptions(VerticalGroup):
     """Core options plus status bar"""
 
     def compose(self) -> ComposeResult:
+        #disabled for better perf on laptop
         yield Visualizers()
         yield CoreOptionsControls(self)
         yield Static("", id='status')
-
-class Visualizers(HorizontalGroup):
-
-    def compose(self) -> ComposeResult:
-        yield VisualizerDisplay(id='analyze-low', feature='kick_harmony')  # type: ignore
-        yield VisualizerDisplay(id='analyze-hi-beat', feature='snare_beat', summary_function=max)  # type: ignore
-        yield VisualizerDisplay(id='analyze-hi', feature='snare_signal', summary_function=max)  # type: ignore
-
-class VisualizerDisplay(Sparkline):
-    """Displays analyzer results reactively."""
-
-    _max_points = 20
-    _data_points = []
-
-    def __init__(self, **kwargs):
-        self.feature = kwargs.pop('feature')
-        super().__init__(**kwargs)
-        self._data_points = [0.0] * self._max_points
-        self.data = self._data_points
-        self.border_title = self.feature
-        self.app.analyzer.subscribe(self._on_result)  # type: ignore
-
-    def _on_result(self, features) -> None:
-        signal = features.get(self.feature, 0)
-        self._data_points = self._data_points[1:] + [float(signal)]
-        self.data = self._data_points
-        self.border_subtitle = f"{float(signal):.2f}"
 
 
 class CoreOptionsControls(HorizontalGroup):

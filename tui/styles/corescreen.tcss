@@ -7,7 +7,7 @@ VisualizerDisplay {
 	border: dashed rgb(100, 100, 100);
 	color: $accent;
 	height: 8;
-	max-width: 50;
+	max-width: 40;
 }
 
 #analyze-low {

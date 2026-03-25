@@ -4,10 +4,10 @@ from processors import AdaptiveThreshold, SignalFollower
 class BeatHarmonySeparator():
     def __init__(self, 
                  signal_lookback: Lookback,
+                 label,
                  floor=0,
                  min_freq=0,
                  max_freq=20000,
-                 label='signal',
                  beat_attack=None,
                  beat_decay=None):
 

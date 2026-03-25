@@ -1,4 +1,4 @@
-from audio_connectors import SDConnector
+import json
 
-
-SDConnector()
+with open('wledconfig.json') as file:
+    print(json.load(file))

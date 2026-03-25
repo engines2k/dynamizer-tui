@@ -1,4 +1,72 @@
-WLEDOptions {
-   layout: horizontal;
+ScreenContent {
+	align: center middle;
 }
 
+WLEDOptions {
+   layout: horizontal;
+   width: 150;
+}
+
+#content-buttons {
+	padding: 1 0;
+}
+
+ControllerControls Collapsible {
+   margin-bottom: 1;
+}
+
+CtrlLightDeviceControls Collapsible {
+   margin-bottom: 1;
+}
+
+EffectBufferPreview {
+	margin-bottom: 1;
+}
+
+DeviceBufferControls HorizontalGroup,
+EffectControls HorizontalGroup {
+   align: left middle;
+   margin-bottom: 1;
+}
+
+.device-effect-settings Static {
+	height: 2;
+}
+
+DeviceBufferControls HorizontalGroup Static,
+EffectControls HorizontalGroup Static {
+   width: 16;
+}
+
+CtrlLightDeviceControls HorizontalGroup {
+   align: left top;
+   margin-bottom: 1;
+}
+
+CtrlLightDeviceControls HorizontalGroup Label {
+   width: 5;
+}
+
+Input.medium-input {
+	width: 18;
+}
+
+Select.medium-input {
+	width: 18;
+}
+
+Input.compact-input {
+   width: 10;
+}
+
+SettingInput {
+   height: 3;
+}
+
+SettingInput Input.medium-input {
+   width: 18;
+}
+
+SettingInput Input.compact-input {
+   width: 10;
+}
