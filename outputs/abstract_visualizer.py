@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-class AbstractAnalyzer(ABC):
+class AbstractVisualizer(ABC):
 
     def __init__(self):
         pass

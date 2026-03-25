@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 
 class AbstractConnector(ABC):
 
-    channel_config: str
+    n_channels: int 
     input_is_aux: bool 
 
     def __init__(self) -> None:

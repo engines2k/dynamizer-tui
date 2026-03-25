@@ -15,7 +15,7 @@ class JACKConnector(AbstractConnector):
 
     def __init__(self, process_callback) -> None:
         self.input_is_aux = False
-        self.channel_config: str
+        self.n_channels: int
         self.active = False
 
         self._client = jack.Client("dynamizer")
@@ -79,11 +79,10 @@ class JACKConnector(AbstractConnector):
             try:
                 if len(input_outports) == 1:
                     self._client.connect(f'{input_outports[0]}', f'dynamizer:input_left')
-                    self.channel_config = 'MONO'
                 elif len(input_outports) == 2:
                     self._client.connect(f'{input_outports[0]}', f'dynamizer:input_left')
                     self._client.connect(f'{input_outports[1]}', f'dynamizer:input_right')
-                    self.channel_config = 'STEREO'
+                self.n_channels = len(input_outports)
                 self._publish_input_switch()
 
             except jack.JackErrorCode as e:

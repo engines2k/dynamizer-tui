@@ -1,8 +1,8 @@
 import time
-from typing import List, Callable
-from analyzers import BeatHarmonySeparator
+from typing import Dict, List, Callable
+from analyzers import AbstractAnalyzer, BeatHarmonySeparator
 import outputs
-from outputs.abstract_analyzer import AbstractAnalyzer
+from outputs.abstract_visualizer import AbstractVisualizer
 from audio_connectors import AudioConnectorFactory
 from weightings import a_weighting
 from lookback import Lookback
@@ -13,23 +13,24 @@ __all__ = ["masteranalyzer"]
 
 class MasterAnalyzer():
     max_failures = 3
-    sample_rate = 44100
-    sample_d = 1 / sample_rate
     window_size = 4096
     hop_size = 64
-    lookback_duration_ms = 40
+    lookback_duration_ms = 100
     min_callback_interval_ms = 33
     _active = False
 
     def __init__(self):
         self._failures = 0
-        self._inbuffer = np.array([])  # Initialize as empty 1D array
+        self._inbuffers: List[np.ndarray] = []
         self._pause_processing = False
         self._callbacks: List[Callable] = []
         self._last_callback_time = 0.0
         self.audio_connector = AudioConnectorFactory.create(self._process_callback)
-        self.signal_lookback = Lookback(self.lookback_duration_ms, self.sample_rate, self.hop_size)
+        self.signal_lookbacks: List[Lookback] = []
         self._sensitivity = 1.0
+        self.sample_rate = 44100
+        self.sample_d = 1 / self.sample_rate
+        self._analyzer_groups: List[Dict[str, AbstractAnalyzer]]
 
         self._signal_windower = np.hanning(self.window_size)
         self._init_fft()
@@ -51,36 +52,39 @@ class MasterAnalyzer():
     def _init_outputs(self):
         self.outputs = {
             "wled": outputs.wled.WLEDClient(),
-            "terminalwave": outputs.SignalAnalyzer('kick_signal'),
+            "terminalwave": outputs.SignalVisualizer('kick_signal'),
         }
 
-    def add_output(self, label: str, output: AbstractAnalyzer):
+    def add_output(self, label: str, output: AbstractVisualizer):
         self.outputs[label] = output
 
     def subscribe(self, callback: Callable) -> None:
         self._callbacks.append(callback)
 
     def _init_processors(self):
-        self._analyzers = {
-            'kick_beat_harmony': BeatHarmonySeparator(
-                self.signal_lookback,
-                label='kick',
-                floor=3000,
-                min_freq=30,
-                max_freq=220,
-                beat_attack=100,
-                beat_decay=26,
-            ),
-            'snare_beat_harmony': BeatHarmonySeparator(
-                self.signal_lookback,
-                label='snare',
-                min_freq=2000,
-                max_freq=6000,
-                floor=400,
-                beat_attack=200,
-                beat_decay=15,
-            ),
-        }
+        self._analyzer_groups = []
+        for i in range(self.audio_connector.n_channels):
+            self._analyzer_groups.append(
+                {
+                'kick_beat_harmony': BeatHarmonySeparator(
+                    self.signal_lookbacks[i],
+                    label='kick',
+                    floor=3000,
+                    min_freq=30,
+                    max_freq=220,
+                    beat_attack=100,
+                    beat_decay=26,
+                ),
+                'snare_beat_harmony': BeatHarmonySeparator(
+                    self.signal_lookbacks[i],
+                    label='snare',
+                    min_freq=2000,
+                    max_freq=6000,
+                    floor=400,
+                    beat_attack=200,
+                    beat_decay=15,
+                ),
+            })
 
     @property 
     def active(self):
@@ -91,9 +95,19 @@ class MasterAnalyzer():
 
     def activate(self) -> None:
         self.audio_connector.activate()
+        self._reset_inbuffers()
+        self.signal_lookbacks = [
+            Lookback(self.lookback_duration_ms, self.sample_rate, self.hop_size)
+            for n in range(self.audio_connector.n_channels)
+        ]
+        self._active = True
         for output in self.outputs.values():
             output.activate()
-        self._active = True
+
+    def _reset_inbuffers(self):
+        self._inbuffers = [
+            np.array([]) for n in range(self.audio_connector.n_channels)
+        ]
 
     def set_sensitivity(self, n_sense: float) -> float:
         self._sensitivity = max(0, min(2, n_sense))
@@ -104,32 +118,34 @@ class MasterAnalyzer():
             self._process_frames(n_frames)
 
     def _process_frames(self, n_frames: int) -> None:
-        if len(self._inbuffer) > self.sample_rate // 4:
+        if not len(self._inbuffers) < self.sample_rate // 4:
             self.attempt_recovery()
-
-        self._load_frames_into_buffer()
-
+        self._load_frames_into_buffers()
         while self._buffer_ready():
-            self._process_buffer_window()
+            self._process_buffers_windows()
 
-    def _load_frames_into_buffer(self) -> None:
-        #TODO: Support for stereo (2 buffers)
-        frame = self.audio_connector.get_buffers()[0]  # Fixed: removed ._client
-        if frame is not None:
+    def _load_frames_into_buffers(self) -> None:
+        frames = self.audio_connector.get_buffers()  # Fixed: removed ._client
+        for i, frame in enumerate(frames):
             frame = np.multiply(self._sensitivity, frame)
-            self._inbuffer = np.concatenate((self._inbuffer, frame))
-
+            self._inbuffers[i] = np.concatenate((self._inbuffers[i], frame))
 
     def _buffer_ready(self):
-        return len(self._inbuffer) >= self.window_size
+        return len(self._inbuffers[0]) >= self.window_size
 
-    def _process_buffer_window(self):
-        window = self._inbuffer[:self.window_size]
-        self._inbuffer = self._inbuffer[self.hop_size:]
-        freqs = self._analyze_signal_window(window)
-        features = self._analyze_freqs_features(freqs)
-        self._output_result(features)
-        self.signal_lookback.push(freqs)
+    def _process_buffers_windows(self):
+        result = []
+        for i, inbuffer in enumerate(self._inbuffers):
+            window = inbuffer[:self.window_size]
+            inbuffer = inbuffer[self.hop_size:]
+            freqs = self._analyze_signal_window(window)
+            features = self._analyze_freqs_features(freqs)
+            result.append({
+                'freqs': freqs,
+                'features': features,
+            })
+            self._output_result(features)
+            self.signal_lookbacks[i].push(freqs)
 
     def _analyze_signal_window(self, x):
         x = self._apply_window_function(x)
@@ -138,11 +154,14 @@ class MasterAnalyzer():
         return freqs
 
     def _analyze_freqs_features(self, freqs):
-        features = {}
-        for analyzer in self._analyzers.values():
-            feature_set = analyzer.analyze(self._freq_bins, freqs)
-            features.update(feature_set)
-        return features
+        result = []
+        for group in self._analyzer_groups:
+            features = {}
+            for analyzer in group.values():
+                feature_set = analyzer.analyze(self._freq_bins, freqs)
+                features.update(feature_set)
+            result.append(features)
+        return result
 
     def _apply_window_function(self, x):
         return x * self._signal_windower
@@ -196,7 +215,7 @@ class MasterAnalyzer():
             print("Dynamizer falling behind! Attempting recovery by clearing buffer.")
             self._failures += 1
         self.toggle_pause()
-        self._inbuffer = np.array([])  # Reset to empty 1D array
+        self._reset_inbuffers()
         time.sleep(.5)
         self.toggle_pause()
 

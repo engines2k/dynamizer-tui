@@ -1,8 +1,7 @@
 import pyaudiowpatch as pyaudio
 import numpy as np
 import threading
-import time
-from typing import Dict, List, Callable, Optional, Any
+from typing import Dict, List, Callable, Optional
 from .abstractconnector import AbstractConnector
 
 
@@ -11,7 +10,7 @@ class PAConnector(AbstractConnector):
     def __init__(self, process_callback: Callable):
         super().__init__()
         
-        self.channel_config = None
+        self.n_channels = None
         self.active = False
         self.input_is_aux = False
 
@@ -20,7 +19,7 @@ class PAConnector(AbstractConnector):
         self._channels = 2
         self._process_callback = process_callback
         self._pyaudio_instance = pyaudio.PyAudio()
-        self._stream: Optional[pyaudio.Stream] = None
+        self._stream: pyaudio.Stream = None
         self._lock = threading.Lock()
         self._buffers: List[np.ndarray] = []
         self._active_input: Optional[int] = None
@@ -35,15 +34,15 @@ class PAConnector(AbstractConnector):
     def get_inputs(self) -> List[str]:
         return list(self._audio_devices.keys())
     
-    def switch_input(self, input_name: str) -> None:
-        if input_name not in self._audio_devices:
-            raise ValueError(f"Input device '{input_name}' not found")
+    def switch_input(self, input: str) -> None:
+        if input not in self._audio_devices:
+            raise ValueError(f"Input device '{input}' not found")
             
         if self.active:
             self._disconnect_input()
         
-        self._active_input = self._audio_devices[input_name]
-        self._current_input_name = input_name
+        self._active_input = self._audio_devices[input]
+        self._current_input_name = input
         self.input_is_aux = False
         
         if self.active:
@@ -72,17 +71,9 @@ class PAConnector(AbstractConnector):
         try:
             dev_info = self._pyaudio_instance.get_device_info_by_index(self._active_input)
             channels = min(dev_info['maxInputChannels'], 2)
-            if channels == 1:
-                new_channel_config = 'MONO'
-            elif channels == 2:
-                new_channel_config = 'STEREO'
-            else:
-                new_channel_config = f'{channels}CH'
-            old_channel_config = self.channel_config
-            self.channel_config = new_channel_config
+            self.n_channels = channels 
             
-            if old_channel_config != new_channel_config:
-                self._publish_input_switch()
+            self._publish_input_switch()
             
             # Determine a valid sample rate for this device. 
             # Prefer device default, then the configured `_sample_rate`,

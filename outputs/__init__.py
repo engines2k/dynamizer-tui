@@ -1,8 +1,8 @@
 from . import wled
-from .terminalwave import SignalAnalyzer, FrequencyAnalyzer
+from .terminalwave import SignalVisualizer, FrequencyVisualizer
 
 __all__ = [
    "wled",
-   "SignalAnalyzer",
-   "FrequencyAnalyzer"
+   "SignalVisualizer",
+   "FrequencyVisualizer"
 ]

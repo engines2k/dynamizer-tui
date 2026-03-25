@@ -1,8 +1,8 @@
 from typing import Callable, List
 from processors import AdaptiveThreshold
-from .abstract_analyzer import AbstractAnalyzer
+from .abstract_visualizer import AbstractVisualizer
 
-class SignalAnalyzer(AbstractAnalyzer):
+class SignalVisualizer(AbstractVisualizer):
 
     def __init__(self, feature_key: str, output_width=40):
         self._threshold = AdaptiveThreshold(decay_rate=1)
@@ -26,7 +26,7 @@ class SignalAnalyzer(AbstractAnalyzer):
             callback(self.result)
 
 
-class FrequencyAnalyzer(AbstractAnalyzer):
+class FrequencyVisualizer(AbstractVisualizer):
 
     def activate(self):
         pass
