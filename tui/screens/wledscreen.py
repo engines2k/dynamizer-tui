@@ -216,14 +216,6 @@ class ControllerControls(VerticalGroup):
         with Collapsible(title=f"📟 controller {self.idx}: {self._controller.name}", collapsed=True, id=f"ctrl-{self.idx}"):
             yield Static(f"[b]hosts:[/b] {controller_hosts}", id=f"ctrl-summary-{self.idx}")
             yield Static(f"[b]devices:[/b] {n_devices}", id=f"ctrl-devices-count-{self.idx}")
-            with HorizontalGroup():
-                yield Static(f"[b]channel:[/b]")
-                yield Select(
-                    options=channel_options,
-                    value=self._controller.channel,
-                    id=f"ctrl-{self.idx}-channel",
-                    classes="compact-input"
-                )
             yield CtrlDestinationControls(self._controller.destinations)
             with VerticalGroup(id=f"ctrl-{self.idx}-devices"):
                 for i, device in enumerate(self._controller.devices):
