@@ -1,10 +1,10 @@
 import numpy as np
 import time
 
-from audio_connectors import AudioConnectorFactory
+from audioconnectors import AudioConnectorFactory
 from analyzers import AbstractAnalyzer, BeatHarmonyAnalyzer
 from outputs import AbstractVisualizer, WLEDClient, AmplitudeVisualizer
-from lookback import Lookback
+from channel_router import ChannelRouter, Channel
 from scipy.signal import ZoomFFT
 from typing import Dict, List, Callable
 from weightings import a_weighting
@@ -24,21 +24,18 @@ class AudioEngine():
         self._callbacks: List[Callable] = []
         self._last_callback_time = 0.0
         self.audio_connector = AudioConnectorFactory.create(self._process_callback)
-        self._inbuffers: List[np.ndarray] = [
-            np.array([]) for n in range(self.audio_connector.n_channels)
-        ]
-        self.signal_lookbacks: List[Lookback] = []
         self._sensitivity = 1.0
         self.sample_rate = 44100
         self.sample_d = 1 / self.sample_rate
         self._analyzer_groups: List[Dict[str, AbstractAnalyzer]]
-
         self._signal_windower = np.hanning(self.window_size)
         self._init_fft()
-        self.signal_lookbacks = [
-            Lookback(self.lookback_duration_ms, self.sample_rate, self.hop_size)
-            for n in range(self.audio_connector.n_channels)
-        ]
+        self._channel_router = ChannelRouter(
+            self.audio_connector.n_channels,
+            self.sample_rate,
+            self.hop_size,
+            self.lookback_duration_ms
+        )
         self._init_outputs()
         self._init_processors()
 
@@ -68,20 +65,21 @@ class AudioEngine():
 
     def _init_processors(self):
         self._analyzer_groups = []
-        for i in range(self.audio_connector.n_channels):
+        for i in range(len(self._channel_router._inbuffers)):
+            channel = Channel(i)
             self._analyzer_groups.append(
                 {
                 'kick_beat_harmony': BeatHarmonyAnalyzer(
-                    self.signal_lookbacks[i],
+                    self._channel_router.get_lookback(channel),
                     label='kick',
                     floor=3000,
                     min_freq=30,
                     max_freq=220,
-                    beat_attack=100,
-                    beat_decay=26,
+                    beat_attack=30,
+                    beat_decay=22,
                 ),
                 'snare_beat_harmony': BeatHarmonyAnalyzer(
-                    self.signal_lookbacks[i],
+                    self._channel_router.get_lookback(channel),
                     label='snare',
                     min_freq=2000,
                     max_freq=6000,
@@ -100,19 +98,13 @@ class AudioEngine():
 
     def activate(self) -> None:
         self.audio_connector.activate()
-        self._reset_inbuffers()
-        self.signal_lookbacks = [
-            Lookback(self.lookback_duration_ms, self.sample_rate, self.hop_size)
-            for n in range(self.audio_connector.n_channels)
-        ]
+        self._channel_router.reset()
         self._active = True
         for output in self.outputs.values():
             output.activate()
 
     def _reset_inbuffers(self):
-        self._inbuffers = [
-            np.array([]) for n in range(self.audio_connector.n_channels)
-        ]
+        self._channel_router.reset()
 
     def set_sensitivity(self, n_sense: float) -> float:
         self._sensitivity = max(0, min(2, n_sense))
@@ -123,30 +115,29 @@ class AudioEngine():
             self._process_frames(n_frames)
 
     def _process_frames(self, n_frames: int) -> None:
-        if not len(self._inbuffers) < self.sample_rate // 4:
+        if self._channel_router.buffer_ready(self.sample_rate // 4):
             self.attempt_recovery()
         self._load_frames_into_buffers()
         while self._buffer_ready():
             self._process_buffers_windows()
 
     def _load_frames_into_buffers(self) -> None:
-        frames = self.audio_connector.get_buffers()  # Fixed: removed ._client
-        for i, frame in enumerate(frames):
-            frame = np.multiply(self._sensitivity, frame)
-            self._inbuffers[i] = np.concatenate((self._inbuffers[i], frame))
+        frames = self.audio_connector.get_buffers()
+        scaled_frames = [np.multiply(self._sensitivity, frame) for frame in frames]
+        self._channel_router.load_frames(scaled_frames)
 
     def _buffer_ready(self):
-        return len(self._inbuffers[0]) >= self.window_size
+        return self._channel_router.buffer_ready(self.window_size)
 
     def _process_buffers_windows(self):
         result = []
-        for i, inbuffer in enumerate(self._inbuffers):
-            window = inbuffer[:self.window_size]
-            self._inbuffers[i] = inbuffer[self.hop_size:]
+        windows = self._channel_router.pop_window(self.window_size, self.hop_size)
+        for i, window in enumerate(windows):
             freqs = self._analyze_signal_window(window)
             features = self._analyze_freqs_features(freqs, i)
             result.append(features)
-            self.signal_lookbacks[i].push(freqs)
+            channel = Channel(i)
+            self._channel_router.get_lookback(channel).push(freqs)
         self._output_result(result)
 
     def _analyze_signal_window(self, x):
