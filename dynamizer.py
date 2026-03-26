@@ -1,14 +1,11 @@
-from textual.app import App, ComposeResult
-from textual.widgets import Footer, Static, Switch, ProgressBar, Select
-from textual.containers import HorizontalGroup, VerticalGroup
-from textual.widgets import Static
-from master_analyzer import masteranalyzer, MasterAnalyzer
+from textual.app import App
+from audioengine import masteranalyzer, AudioEngine
 from tui.screens import CORE, WLED
 
 
 class DynamizerApp(App):
     """An app for realtime music visualization."""
-    analyzer: MasterAnalyzer = masteranalyzer
+    analyzer: AudioEngine = masteranalyzer
 
     BINDINGS = [
         ('ctrl+z', 'core_screen', 'CORE'),

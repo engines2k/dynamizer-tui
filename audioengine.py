@@ -10,7 +10,7 @@ from typing import Dict, List, Callable
 from weightings import a_weighting
 
 
-class MasterAnalyzer():
+class AudioEngine():
     max_failures = 3
     window_size = 4096
     hop_size = 64
@@ -224,6 +224,6 @@ class MasterAnalyzer():
         status = "PAUSED" if self._pause_processing else "RESUMED"
         print(f"\nProcessing {status}")
 
-masteranalyzer = MasterAnalyzer()
+masteranalyzer = AudioEngine()
 
 

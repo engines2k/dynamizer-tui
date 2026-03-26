@@ -2,11 +2,11 @@ import json
 import socket
 import time
 
-from outputs.abstract_visualizer import AbstractVisualizer
+from typing import Dict, List, Optional, Tuple
+from .abstractvisualizer import AbstractVisualizer
+from .delayqueue import DelayQueue
 from .light_buffer import LightEffectBuffer
 from .light_device import LightDevice, DeviceBuffer
-from .delayqueue import DelayQueue
-from typing import Dict, List, Optional, Tuple
 
 OUTPUT_DELAY_MS = 0#220
 LISTEN_TIMEOUT_SECONDS = 2

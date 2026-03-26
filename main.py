@@ -1,4 +1,4 @@
-from master_analyzer import masteranalyzer
+from audioengine import masteranalyzer
 import time
 
 if __name__ == "__main__":
