@@ -10,13 +10,12 @@ class PAConnector(AbstractConnector):
     def __init__(self, process_callback: Callable):
         super().__init__()
         
-        self.n_channels = None
+        self.n_channels = 2
         self.active = False
         self.input_is_aux = False
 
         self._sample_rate = 44100
         self._buffer_size = 1024
-        self._channels = 2
         self._process_callback = process_callback
         self._pyaudio_instance = pyaudio.PyAudio()
         self._stream: pyaudio.Stream = None
