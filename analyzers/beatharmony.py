@@ -1,20 +1,23 @@
+from typing import List, Optional
+from channelmanager import Channel
 from lookback import Lookback
 from processors import AdaptiveThreshold, SignalFollower
 from .abstractanalyzer import AbstractAnalyzer
 
 class BeatHarmonyAnalyzer(AbstractAnalyzer):
     def __init__(self,
-                 signal_lookback: Lookback,
-                 label,
-                 floor=0,
-                 min_freq=0,
-                 max_freq=20000,
-                 beat_attack=None,
-                 beat_decay=None):
+                 lookbacks: List[Lookback],
+                 channel: Channel,
+                 label: str,
+                 floor: int = 0,
+                 min_freq: int = 0,
+                 max_freq: int = 20000,
+                 beat_attack: Optional[int] = None,
+                 beat_decay: Optional[int] = None):
 
+        self._channel = channel
         self._label = label
         self._transient_threshold = AdaptiveThreshold(decay_rate=500, raise_factor=.4)
-        self._signal_lookback = signal_lookback
         self._min_freq = min_freq
         self._max_freq = max_freq
         self._floor = floor

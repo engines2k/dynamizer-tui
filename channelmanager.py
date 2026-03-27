@@ -15,7 +15,7 @@ class Channel(IntEnum):
 class ChannelError(Exception):
     pass
 
-class ChannelRouter:
+class ChannelManager:
     def __init__(
         self,
         n_channels: int,
@@ -27,8 +27,8 @@ class ChannelRouter:
         self._sample_rate = sample_rate
         self._hop_size = hop_size
         self._lookback_duration_ms = lookback_duration_ms
-        self._inbuffers: List[np.ndarray] = []
-        self._lookbacks: List[Lookback] = []
+        self.inbuffers: List[np.ndarray] = []
+        self.lookbacks: List[Lookback] = []
         self._init_buffers()
 
     def _init_buffers(self):
@@ -38,7 +38,7 @@ class ChannelRouter:
                 Lookback(self._lookback_duration_ms, self._sample_rate, self._hop_size)
             ]
         elif self._n_input_channels == 2:
-            # L R, MID LSIDE, RSIDE
+        # L R, MID LSIDE, RSIDE
             self._inbuffers = [
                 np.array([]),
                 np.array([]),
