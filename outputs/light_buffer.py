@@ -1,7 +1,9 @@
 from collections import deque
 
+from channelmanager import Channel
+
 class LightEffectBuffer:
-    def __init__(self, name: str, feature: str, length: int, settings: dict, channel: int = 0):
+    def __init__(self, name: str, feature: str, length: int, settings: dict, channel: Channel = Channel.LEFT):
         self.name = name
         self.feature = feature
         self.length = length
@@ -11,11 +13,11 @@ class LightEffectBuffer:
         self._channel = channel
 
     @property
-    def channel(self) -> int:
+    def channel(self) -> Channel:
         return self._channel
 
     @channel.setter
-    def channel(self, value: int) -> None:
+    def channel(self, value: Channel) -> None:
         if value < 0:
             print(f"Warning: LightEffectBuffer '{self.name}' requested channel {value} (negative). Ignoring.")
             return

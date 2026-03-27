@@ -1,16 +1,29 @@
 from enum import IntEnum
-from typing import List
+from typing import Dict, List
 import numpy as np
 from lookback import Lookback
 
 
 class Channel(IntEnum):
-    MID = 0
-    LEFT = 1
-    RIGHT = 2
+    LEFT = 0
+    RIGHT = 1
+    MID = 2
     LSIDE = 3
     RSIDE = 4
 
+MONO_MAPPING = {
+    Channel.LEFT: 0,
+    Channel.RIGHT: 0,
+    Channel.MID: 0,
+}
+
+STEREO_MAPPING = {
+    Channel.LEFT: 0,
+    Channel.RIGHT: 1,
+    Channel.MID: 2,
+    Channel.LSIDE: 3,
+    Channel.RSIDE: 4,
+}
 
 class ChannelError(Exception):
     pass
@@ -29,7 +42,9 @@ class ChannelManager:
         self._lookback_duration_ms = lookback_duration_ms
         self.inbuffers: List[np.ndarray] = []
         self.lookbacks: List[Lookback] = []
+        self._mapping: Dict[Channel, int]
         self._init_buffers()
+        self._set_mapping()
 
     def _init_buffers(self):
         if self._n_input_channels == 1:
@@ -54,44 +69,14 @@ class ChannelManager:
             raise ValueError(f"Unsupported number of input channels: {self._n_input_channels}")
 
     def get_buffer(self, channel: Channel) -> np.ndarray:
-        if self._n_input_channels == 1:
-            if channel in (Channel.MID, Channel.LEFT, Channel.RIGHT):
-                return self._inbuffers[0]
-            raise ChannelError(f"Channel {channel.name} not available for mono input")
+        if channel not in self._mapping:
+            raise ChannelError(f"Unknown channel: {channel}")
+        return self._inbuffers[self._mapping[channel]]
         
-        elif self._n_input_channels == 2:
-            buffer_map = {
-                Channel.LEFT: 0,
-                Channel.RIGHT: 1,
-                Channel.MID: 2,
-                Channel.LSIDE: 3,
-                Channel.RSIDE: 4,
-            }
-            if channel not in buffer_map:
-                raise ChannelError(f"Unknown channel: {channel}")
-            return self._inbuffers[buffer_map[channel]]
-        
-        raise ChannelError(f"No buffers available for {self._n_input_channels} input channels")
 
     def get_lookback(self, channel: Channel) -> Lookback:
-        if self._n_input_channels == 1:
-            if channel in (Channel.MID, Channel.LEFT, Channel.RIGHT):
-                return self._lookbacks[0]
-            raise ChannelError(f"Channel {channel.name} not available for mono input")
+        return self._lookbacks[self._mapping[channel]]
         
-        elif self._n_input_channels == 2:
-            lookback_map = {
-                Channel.LEFT: 0,
-                Channel.RIGHT: 1,
-                Channel.MID: 2,
-                Channel.LSIDE: 3,
-                Channel.RSIDE: 4,
-            }
-            if channel not in lookback_map:
-                raise ChannelError(f"Unknown channel: {channel}")
-            return self._lookbacks[lookback_map[channel]]
-        
-        raise ChannelError(f"No lookbacks available for {self._n_input_channels} input channels")
 
     def load_frames(self, frames: List[np.ndarray]) -> None:
         if self._n_input_channels == 1:
@@ -109,11 +94,11 @@ class ChannelManager:
             self._inbuffers[3] = np.concatenate((self._inbuffers[3], lside))
             self._inbuffers[4] = np.concatenate((self._inbuffers[4], rside))
 
-    def pop_window(self, window_size: int, hop_size: int) -> List[np.ndarray]:
-        result = []
+    def pop_windows(self, window_size: int, hop_size: int) -> Dict[Channel, np.ndarray]:
+        result = {}
         for i, buffer in enumerate(self._inbuffers):
             window = buffer[:window_size]
-            result.append(window)
+            result[Channel(i)] = (window)
             self._inbuffers[i] = buffer[hop_size:]
         return result
 
@@ -122,3 +107,10 @@ class ChannelManager:
 
     def reset(self) -> None:
         self._init_buffers()
+
+    def _set_mapping(self):
+        if self._n_input_channels == 1:
+            self._mapping = MONO_MAPPING
+        
+        elif self._n_input_channels == 2:
+            self._mapping = STEREO_MAPPING

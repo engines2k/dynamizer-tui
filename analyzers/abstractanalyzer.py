@@ -13,7 +13,7 @@ class AbstractAnalyzer(ABC):
         pass
 
     @abstractmethod
-    def analyze(self, bins: ndarray, freqs: ndarray) -> Dict:
+    def analyze(self, bins: ndarray, freqs: Dict[Channel, ndarray]) -> Dict[Channel, Dict[str, float]]:
         """
         Conduct some analysis of signal features from the frequencies
         and bins, and return the resulting features labeled in a dict.

@@ -65,38 +65,36 @@ class AudioEngine():
 
     def _init_processors(self):
         self._analyzers = [
-                {
-                'kick_beat_harmony': BeatHarmonyAnalyzer(
-                    self._channel_manager.lookbacks,
-                    channel=Channel.MID,
-                    label='kick',
-                    floor=3000,
-                    min_freq=30,
-                    max_freq=220,
-                    beat_attack=30,
-                    beat_decay=22,
-                ),
-                'snare_beat_harmony_left': BeatHarmonyAnalyzer(
-                    self._channel_manager.lookbacks,
-                    channel=Channel.LEFT,
-                    label='snare',
-                    min_freq=2000,
-                    max_freq=6000,
-                    floor=400,
-                    beat_attack=200,
-                    beat_decay=15,
-                ),
-                'snare_beat_harmony_right': BeatHarmonyAnalyzer(
-                    self._channel_manager.lookbacks,
-                    channel=Channel.RIGHT,
-                    label='snare',
-                    min_freq=2000,
-                    max_freq=6000,
-                    floor=400,
-                    beat_attack=200,
-                    beat_decay=15,
-                ),
-            }
+            BeatHarmonyAnalyzer(
+                self._channel_manager.lookbacks,
+                channel=Channel.MID,
+                label='kick',
+                floor=3000,
+                min_freq=30,
+                max_freq=220,
+                beat_attack=30,
+                beat_decay=22,
+            ),
+            BeatHarmonyAnalyzer(
+                self._channel_manager.lookbacks,
+                channel=Channel.LEFT,
+                label='snare',
+                min_freq=2000,
+                max_freq=6000,
+                floor=400,
+                beat_attack=200,
+                beat_decay=15,
+            ),
+            BeatHarmonyAnalyzer(
+                self._channel_manager.lookbacks,
+                channel=Channel.RIGHT,
+                label='snare',
+                min_freq=2000,
+                max_freq=6000,
+                floor=400,
+                beat_attack=200,
+                beat_decay=15,
+            )
         ]
 
     @property 
@@ -127,11 +125,13 @@ class AudioEngine():
     def _process_frames(self, n_frames: int) -> None:
         if self._channel_manager.buffer_ready(self.sample_rate // 4):
             self.attempt_recovery()
-        self._load_frames_into_buffers()
+        self._load_inframes()
         while self._buffer_ready():
-            self._process_buffers_windows()
+            treated = self._treat_windows()
+            features = self._analyze_all_features(treated)
+            self._send_to_outputs(features)
 
-    def _load_frames_into_buffers(self) -> None:
+    def _load_inframes(self) -> None:
         frames = self.audio_connector.get_buffers()
         scaled_frames = [np.multiply(self._sensitivity, frame) for frame in frames]
         self._channel_manager.load_frames(scaled_frames)
@@ -139,16 +139,15 @@ class AudioEngine():
     def _buffer_ready(self):
         return self._channel_manager.buffer_ready(self.window_size)
 
-    def _process_buffers_windows(self):
-        result = []
-        windows = self._channel_manager.pop_window(self.window_size, self.hop_size)
-        for i, window in enumerate(windows):
-            result.append(features)
-            channel = Channel(i)
+    # TODO:
+    def _treat_windows(self):
+        res = {}
+        windows_by_channel = self._channel_manager.pop_windows(self.window_size, self.hop_size)
+        for channel, window in windows_by_channel.items():
+            freqs = self._analyze_signal_window(window)
+            res[channel] = freqs
             self._channel_manager.get_lookback(channel).push(freqs)
-        freqs = self._analyze_signal_window(window)
-        features = self._analyze_freqs_features(freqs)
-        self._output_result(result)
+        return res
 
     def _analyze_signal_window(self, x):
         x = self._apply_window_function(x)
@@ -156,11 +155,15 @@ class AudioEngine():
         freqs = self._transform_freqs(freqs)
         return freqs
 
-    def _analyze_freqs_features(self, freqs) -> Dict[Channel, Dict[str, float]]:
+    def _analyze_all_features(self, freqs: Dict[Channel, np.ndarray]) -> Dict[Channel, Dict[str, float]]:
         channel_features = {}
         for analyzer in self._analyzers:
             analyzer_features = analyzer.analyze(self._freq_bins, freqs)
-            channel_features[analyzer.channel] = channel_features.get(analyzer.channel, {}).update(analyzer_features)
+            for channel, features in analyzer_features.items():
+                if channel in channel_features:
+                    channel_features[channel].update(features)
+                else:
+                    channel_features[channel] = features
         return channel_features
 
     def _apply_window_function(self, x):
@@ -179,7 +182,7 @@ class AudioEngine():
         freqs = np.clip(freqs, a_min=0, a_max=None)
         return freqs
 
-    def _output_result(self, features):
+    def _send_to_outputs(self, features):
         current_time = time.time() * 1000
         for output in self.outputs.values():
             output.send(features)

@@ -1,4 +1,6 @@
-from typing import List, Optional
+from typing import Dict, List, Optional
+
+from numpy import ndarray
 from channelmanager import Channel
 from lookback import Lookback
 from processors import AdaptiveThreshold, SignalFollower
@@ -15,7 +17,7 @@ class BeatHarmonyAnalyzer(AbstractAnalyzer):
                  beat_attack: Optional[int] = None,
                  beat_decay: Optional[int] = None):
 
-        self._channel = channel
+        self.channel = channel
         self._label = label
         self._transient_threshold = AdaptiveThreshold(decay_rate=500, raise_factor=.4)
         self._min_freq = min_freq
@@ -27,9 +29,9 @@ class BeatHarmonyAnalyzer(AbstractAnalyzer):
         else:
             self._signal_follower = None
 
-    def analyze(self, bins, freqs):
-        freqs = freqs[(bins > self._min_freq) & (bins < self._max_freq + 1)]
-        signal = sum(freqs)
+    def analyze(self, bins, freqs: Dict[Channel, ndarray]) -> Dict[Channel, Dict[str, float]]:
+        channel_freqs = freqs[self.channel][(bins > self._min_freq) & (bins < self._max_freq + 1)]
+        signal = sum(channel_freqs)
 
         self._transient_threshold.track(signal)
         threshold = int(self._transient_threshold.current)
@@ -41,8 +43,10 @@ class BeatHarmonyAnalyzer(AbstractAnalyzer):
 
         signal_harmony = int(min(signal, threshold))
 
-        return {
-            f'{self._label}_signal': int(signal),
-            f'{self._label}_beat': signal_beat,
-            f'{self._label}_harmony': signal_harmony
+        return { self.channel: 
+            {
+                f'{self._label}_signal': int(signal),
+                f'{self._label}_beat': signal_beat,
+                f'{self._label}_harmony': signal_harmony
+            }
         }

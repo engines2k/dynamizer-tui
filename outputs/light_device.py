@@ -1,4 +1,6 @@
 from typing import List
+
+from channelmanager import Channel
 from .light_buffer import LightEffectBuffer, LightBufferFrame
 
 
@@ -8,11 +10,11 @@ class DeviceBuffer:
         self.effect = effect
 
     @property
-    def channel(self) -> int:
+    def channel(self) -> Channel:
         return self.effect.channel
 
     @channel.setter
-    def channel(self, value: int) -> None:
+    def channel(self, value: Channel) -> None:
         self.effect.channel = value
 
     @property

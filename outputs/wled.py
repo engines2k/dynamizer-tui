@@ -3,6 +3,8 @@ import socket
 import time
 
 from typing import Dict, List, Optional, Tuple
+
+from channelmanager import Channel
 from .abstractvisualizer import AbstractVisualizer
 from .delayqueue import DelayQueue
 from .light_buffer import LightEffectBuffer
@@ -49,12 +51,13 @@ class WLEDClient(AbstractVisualizer):
         buffers = []
         for buffer_config in config['buffers']:
             buffer_type = buffer_config['type']
+            channel = Channel(buffer_config.get('channel', 0))
             effect = None
             if buffer_type == 'preset':
                 effect = self.effect_lookup[buffer_config['effect']]
-                effect.channel = buffer_config.get('channel', 0)
+                effect.channel = channel
             elif buffer_type == 'custom':
-                effect = LightEffectBuffer(**buffer_config['settings'], channel=buffer_config.get('channel', 0))
+                effect = LightEffectBuffer(**buffer_config['settings'], channel=channel)
             else:
                 raise Exception(f'buffer type {buffer_type} invalid, must be "preset" or "custom"!')
             buffers.append(DeviceBuffer(start=buffer_config['offset'], effect=effect))
@@ -73,7 +76,7 @@ class WLEDClient(AbstractVisualizer):
         self._active = True
 
 
-    def send(self, features):
+    def send(self, features: Dict[Channel, Dict[str, float]]):
         if not self._ready_to_send:
             return
 
@@ -114,20 +117,14 @@ class WLEDController():
     def activate(self):
         self._resolve_addresses()
 
-    def build_payload(self, features):
+    def build_payload(self, features: Dict[Channel, Dict[str, float]]):
         payload = bytearray()
         payload.append(LISTEN_TIMEOUT_SECONDS)
 
-        is_list = isinstance(features, list)
-        #TODO: clean up this smells odd
         for device in self.devices:
             for buffer in device.buffers:
-                if is_list and buffer.channel < len(features):
-                    channel_features = features[buffer.channel]
-                elif is_list:
-                    channel_features = features[0]
-                else:
-                    channel_features = features
+                channel_features = features[buffer.channel]
+                print(channel_features)
                 feature_value = channel_features[buffer.effect.feature] * self.multiplier
                 buffer.effect.handle_signal(feature_value)
 
