@@ -5,6 +5,7 @@ from textual.widget import Widget
 from textual.widgets import Button, ContentSwitcher, Select, Static, Label, Input, Footer, Collapsible
 from textual.binding import Binding
 from textual.timer import Timer
+from channelmanager import Channel
 from outputs.light_buffer import LightEffectBuffer
 from outputs.light_device import DeviceBuffer
 from outputs.light_device import LightDevice
@@ -123,7 +124,10 @@ class EffectControls(VerticalGroup):
         return wled_client.n_channels
 
     def compose(self) -> ComposeResult:
-        channel_options = [(str(i), i) for i in range(self.n_channels)]
+        if self.n_channels >= 2:
+            channel_options = [(c.name, c) for c in Channel]
+        else:
+            channel_options = [(c.name, c) for c in [Channel.LEFT, Channel.RIGHT, Channel.MID]]
         
         with Collapsible(title=f"⚡ {self._effect.name} ({self._effect.feature})", collapsed=True, id=f"effect-{self.idx}"):
             yield EffectBufferPreview(self._effect, id=f"effect-preview-{self.idx}")
@@ -131,7 +135,7 @@ class EffectControls(VerticalGroup):
                 yield Static(f"[b]channel:[/b]")
                 yield Select(
                     options=channel_options,
-                    value=self._effect.channel,
+                    value=Channel(int(self._effect.channel)),
                     id=f"effect-{self.idx}-channel",
                     classes="compact-input"
                 )
@@ -154,7 +158,7 @@ class EffectControls(VerticalGroup):
     def on_channel_changed(self, event: Select.Changed) -> None:
         if event.select.id == f"effect-{self.idx}-channel":
             if event.value is not None and hasattr(event.value, '__int__'):
-                self._effect.channel = int(event.value)
+                self._effect.channel = Channel(int(event.value))
 
     @on(Collapsible.Expanded)
     def on_expanded(self, event: Collapsible.Expanded) -> None:
@@ -211,8 +215,6 @@ class ControllerControls(VerticalGroup):
         n_devices = len(self._controller.devices)
         controller_hosts = ', '.join([f"{d['host']}:{d['port']}" for d in self._controller.destinations])
         
-        channel_options = [(str(i), i) for i in range(self.n_channels)]
-        
         with Collapsible(title=f"📟 controller {self.idx}: {self._controller.name}", collapsed=True, id=f"ctrl-{self.idx}"):
             yield Static(f"[b]hosts:[/b] {controller_hosts}", id=f"ctrl-summary-{self.idx}")
             yield Static(f"[b]devices:[/b] {n_devices}", id=f"ctrl-devices-count-{self.idx}")
@@ -221,13 +223,6 @@ class ControllerControls(VerticalGroup):
                 for i, device in enumerate(self._controller.devices):
                     yield CtrlLightDeviceControls(i, device, self) 
 
-
-    @on(Select.Changed)
-    def on_channel_changed(self, event: Select.Changed) -> None:
-        if event.select.id == f"ctrl-{self.idx}-channel":
-            if event.value is not None and hasattr(event.value, '__int__'):
-                self._controller.channel = int(event.value) 
-                
 
     @on(Collapsible.Expanded)
     def on_expanded(self, event: Collapsible.Expanded) -> None:
