@@ -54,7 +54,7 @@ class AudioEngine():
     def _init_outputs(self):
         self.outputs = {
             "wled": WLEDClient(self.audio_connector.n_channels),
-            "terminalwave": AmplitudeVisualizer('kick_signal'),
+            "terminalwave": AmplitudeVisualizer('kick_signal', channel=2),
         }
 
     def add_output(self, label: str, output: AbstractVisualizer):

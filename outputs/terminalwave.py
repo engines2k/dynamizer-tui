@@ -19,9 +19,8 @@ class AmplitudeVisualizer(AbstractVisualizer):
         pass
 
     def send(self, features):
-        if isinstance(features, list):
-            features = features[self._channel]
-        signal = features[self._key]
+        channel_features = features[self._channel]
+        signal = channel_features[self._key]
         self._threshold.track(signal)
         ceiling = self._threshold.current + .00000000000001
         self.result = ("*" * int((signal / ceiling) * self._output_width))
@@ -38,8 +37,7 @@ class FrequencyVisualizer(AbstractVisualizer):
         pass
 
     def send(self, features):
-        if isinstance(features, list):
-            features = features[self._channel]
+        channel_features = features[self._channel]
         res = ""
         for i in range(0, len(features['freqs']), 2):
             strength = int(features['freqs'][i])

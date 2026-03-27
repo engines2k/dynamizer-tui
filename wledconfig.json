@@ -172,15 +172,15 @@
 					"buffers": [
 						{ "channel": 0, "offset": 0, "type": "preset", "effect": "snare signal 2" },
 						{ "channel": 0, "offset": 0, "type": "preset", "effect": "snare beat 2" },
-						{ "channel": 0, "offset": 25, "type": "preset", "effect": "kick signal 2" },
-						{ "channel": 0, "offset": 25, "type": "preset", "effect": "kick beat 2" }
+						{ "channel": 2, "offset": 0, "type": "preset", "effect": "kick signal 2" },
+						{ "channel": 2, "offset": 0, "type": "preset", "effect": "kick beat 2" }
 					]
 				},
 				{
 					"led_count": 37,
 					"buffers": [
-						{ "channel": 1, "offset": 0, "type": "preset", "effect": "kick signal 2" },
-						{ "channel": 1, "offset": 0, "type": "preset", "effect": "kick beat 2" },
+						{ "channel": 2, "offset": 0, "type": "preset", "effect": "kick signal 2" },
+						{ "channel": 2, "offset": 0, "type": "preset", "effect": "kick beat 2" },
 						{ "channel": 1, "offset": 26, "type": "preset", "effect": "snare signal 2" },
 						{ "channel": 1, "offset": 26, "type": "preset", "effect": "snare beat 2" }
 					]
