@@ -16,7 +16,7 @@ class AudioEngine():
     window_size = 4096
     hop_size = 64
     lookback_duration_ms = 100
-    min_callback_interval_ms = 33
+    min_callback_interval_ms = 20#33
     _active = False
 
     def __init__(self):
@@ -53,8 +53,8 @@ class AudioEngine():
 
     def _init_outputs(self):
         self.outputs: Dict[str, AbstractVisualizer] = {
-            #"wled": WLEDClient(self.audio_connector.n_channels),
-            "terminalwave": AmplitudeVisualizer('flux', channel=2)
+            "wled": WLEDClient(self.audio_connector.n_channels),
+            "terminalwave": AmplitudeVisualizer('flux', channel=Channel.MID)
         }
 
     def add_output(self, label: str, output: AbstractVisualizer) -> None:

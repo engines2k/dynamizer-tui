@@ -29,7 +29,7 @@ class ChannelError(Exception):
     pass
 
 class ChannelManager:
-    _lookback_duration_ms = 100
+    _lookback_duration_ms = 1000
 
     def __init__(
         self,
