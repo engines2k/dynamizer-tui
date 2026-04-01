@@ -19,7 +19,9 @@ class AmplitudeVisualizer(AbstractVisualizer):
         self._threshold.track(signal)
         ceiling = self._threshold.current + .00000000000001
         stars = ("*" * int((signal / ceiling) * self._output_width))
-        self.result = f'{signal:4.0f}:{stars}'
+        empty = " " * (self._output_width - len(stars))
+        self.result = f'{signal:4.0f}:{stars}{empty}|{ceiling:4.0f}'
+        
         print(self.result)
 
 
