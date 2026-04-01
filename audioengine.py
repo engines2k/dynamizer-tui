@@ -2,11 +2,12 @@ import numpy as np
 import time
 
 from audioconnectors import AudioConnectorFactory
-from analyzers import AbstractAnalyzer, BeatHarmonyAnalyzer
+from analyzers import AbstractAnalyzer, BeatHarmonyAnalyzer, FluxAnalyzer
+import channelmanager
 from outputs import AbstractVisualizer, WLEDClient, AmplitudeVisualizer
 from channelmanager import ChannelManager, Channel
 from scipy.signal import ZoomFFT
-from typing import Dict, List, Callable
+from typing import Dict, List, Callable, Tuple
 from weightings import a_weighting
 
 
@@ -34,7 +35,6 @@ class AudioEngine():
             self.audio_connector.n_channels,
             self.sample_rate,
             self.hop_size,
-            self.lookback_duration_ms
         )
         self._init_outputs()
         self._init_processors()
@@ -52,12 +52,12 @@ class AudioEngine():
         self.weightings = self._calc_a_weighting()
 
     def _init_outputs(self):
-        self.outputs = {
-            "wled": WLEDClient(self.audio_connector.n_channels),
-            "terminalwave": AmplitudeVisualizer('kick_signal', channel=2),
+        self.outputs: Dict[str, AbstractVisualizer] = {
+            #"wled": WLEDClient(self.audio_connector.n_channels),
+            "terminalwave": AmplitudeVisualizer('flux', channel=2)
         }
 
-    def add_output(self, label: str, output: AbstractVisualizer):
+    def add_output(self, label: str, output: AbstractVisualizer) -> None:
         self.outputs[label] = output
 
     def subscribe(self, callback: Callable) -> None:
@@ -66,7 +66,7 @@ class AudioEngine():
     def _init_processors(self):
         self._analyzers = [
             BeatHarmonyAnalyzer(
-                self._channel_manager.lookbacks,
+                self._channel_manager.get_lookbacks(),
                 channel=Channel.MID,
                 label='kick',
                 floor=3000,
@@ -76,7 +76,7 @@ class AudioEngine():
                 beat_decay=22,
             ),
             BeatHarmonyAnalyzer(
-                self._channel_manager.lookbacks,
+                self._channel_manager.get_lookbacks(),
                 channel=Channel.LEFT,
                 label='snare',
                 min_freq=2000,
@@ -86,7 +86,7 @@ class AudioEngine():
                 beat_decay=15,
             ),
             BeatHarmonyAnalyzer(
-                self._channel_manager.lookbacks,
+                self._channel_manager.get_lookbacks(),
                 channel=Channel.RIGHT,
                 label='snare',
                 min_freq=2000,
@@ -94,6 +94,10 @@ class AudioEngine():
                 floor=400,
                 beat_attack=200,
                 beat_decay=15,
+            ),
+            FluxAnalyzer(
+                lookbacks=self._channel_manager.get_lookbacks(),
+                label=''
             )
         ]
 
@@ -120,16 +124,18 @@ class AudioEngine():
 
     def _process_callback(self, n_frames: int) -> None:
         if not self._pause_processing:
-            self._process_frames(n_frames)
+            self.process_frames(n_frames)
 
-    def _process_frames(self, n_frames: int) -> None:
-        if self._channel_manager.buffer_ready(self.sample_rate // 4):
+    def process_frames(self, n_frames: int) -> None:
+        if self._channel_manager.buffer_ready(self.window_size):
             self.attempt_recovery()
         self._load_inframes()
         while self._buffer_ready():
-            treated = self._treat_windows()
-            features = self._analyze_all_features(treated)
+            windows, treated_freqs = self._treat_windows()
+            self._channel_manager.load_results(windows, treated_freqs)
+            features = self._analyze_all_features(treated_freqs)
             self._send_to_outputs(features)
+
 
     def _load_inframes(self) -> None:
         frames = self.audio_connector.get_buffers()
@@ -139,15 +145,13 @@ class AudioEngine():
     def _buffer_ready(self):
         return self._channel_manager.buffer_ready(self.window_size)
 
-    # TODO:
-    def _treat_windows(self):
+    def _treat_windows(self) -> Tuple[Dict[Channel, np.ndarray], Dict[Channel, np.ndarray]]:
+        windows_by_channel = self._channel_manager.pop_frames(self.window_size, self.hop_size)
         res = {}
-        windows_by_channel = self._channel_manager.pop_windows(self.window_size, self.hop_size)
         for channel, window in windows_by_channel.items():
             freqs = self._analyze_signal_window(window)
             res[channel] = freqs
-            self._channel_manager.get_lookback(channel).push(freqs)
-        return res
+        return windows_by_channel, res
 
     def _analyze_signal_window(self, x):
         x = self._apply_window_function(x)

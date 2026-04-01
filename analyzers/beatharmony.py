@@ -8,7 +8,7 @@ from .abstractanalyzer import AbstractAnalyzer
 
 class BeatHarmonyAnalyzer(AbstractAnalyzer):
     def __init__(self,
-                 lookbacks: List[Lookback],
+                 lookbacks: Dict[Channel, Lookback],
                  channel: Channel,
                  label: str,
                  floor: int = 0,

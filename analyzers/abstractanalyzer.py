@@ -1,15 +1,15 @@
 from abc import ABC, abstractmethod
-from typing import Dict, List
+from typing import Dict
 from numpy import ndarray
 from channelmanager import Channel
 from lookback import Lookback
 
 class AbstractAnalyzer(ABC):
     label: str
-    channel: Channel
+    feature_type: str
 
     @abstractmethod
-    def __init__(self, lookbacks: List[Lookback], label):
+    def __init__(self, lookbacks: Dict[Channel, Lookback], label):
         pass
 
     @abstractmethod
