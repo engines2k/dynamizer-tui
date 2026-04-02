@@ -1,4 +1,4 @@
-from outputs.abstractvisualizer import AbstractVisualizer
+from .abstractvisualizer import AbstractVisualizer
 from processors import AdaptiveThreshold
 
 class AmplitudeVisualizer(AbstractVisualizer):
