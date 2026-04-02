@@ -1,5 +1,6 @@
 import numpy as np
 import time
+from concurrent.futures import ThreadPoolExecutor
 
 from audioconnectors import AudioConnectorFactory
 from analyzers import AbstractAnalyzer, BeatHarmonyAnalyzer, FluxAnalyzer, VolumeAnalyzer
@@ -108,7 +109,7 @@ class FeatureEngine():
         return self._active
 
     def _calc_a_weighting(self):
-        return np.array([a_weighting(freq) for freq in self._freq_bins])
+        return a_weighting(self._freq_bins)
 
     def activate(self) -> None:
         self.audio_connector.activate()
@@ -149,11 +150,29 @@ class FeatureEngine():
 
     def _treat_windows(self) -> Tuple[Dict[Channel, np.ndarray], Dict[Channel, np.ndarray]]:
         windows_by_channel = self._channel_manager.pop_frames(self.window_size, self.hop_size)
-        res = {}
-        for channel, window in windows_by_channel.items():
-            freqs = self._analyze_signal_window(window)
-            res[channel] = freqs
-        return windows_by_channel, res
+        treated_freqs = {}
+
+        left_window = self._apply_window_function(windows_by_channel[Channel.LEFT])
+        right_window = self._apply_window_function(windows_by_channel[Channel.RIGHT])
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            left_future = executor.submit(self._apply_fft_strategy, left_window)
+            right_future = executor.submit(self._apply_fft_strategy, right_window)
+            left_fft = left_future.result()
+            right_fft = right_future.result()
+
+        treated_freqs[Channel.LEFT] = self._transform_freqs(left_fft)
+        treated_freqs[Channel.RIGHT] = self._transform_freqs(right_fft)
+
+        mid_fft = (left_fft + right_fft) / 2
+        lside_fft = (left_fft - right_fft) / 2
+        rside_fft = (right_fft - left_fft) / 2
+
+        treated_freqs[Channel.MID] = self._transform_freqs(mid_fft)
+        treated_freqs[Channel.LSIDE] = self._transform_freqs(lside_fft)
+        treated_freqs[Channel.RSIDE] = self._transform_freqs(rside_fft)
+
+        return windows_by_channel, treated_freqs
 
     def _analyze_signal_window(self, x):
         x = self._apply_window_function(x)
@@ -176,9 +195,13 @@ class FeatureEngine():
         return x * self._signal_windower
 
     def _apply_fft_strategy(self, x):
-        low_freqs = self.low_zoom_fft(x)
-        mid_freqs = self.mid_zoom_fft(x)
-        high_freqs = self.high_zoom_fft(x)
+        with ThreadPoolExecutor(max_workers=3) as executor:
+            low_future = executor.submit(self.low_zoom_fft, x)
+            mid_future = executor.submit(self.mid_zoom_fft, x)
+            high_future = executor.submit(self.high_zoom_fft, x)
+            low_freqs = low_future.result()
+            mid_freqs = mid_future.result()
+            high_freqs = high_future.result()
         return np.concatenate((low_freqs, mid_freqs, high_freqs))
 
     def _transform_freqs(self, freqs):

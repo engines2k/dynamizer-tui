@@ -20,8 +20,9 @@ class Lookback():
         num_items = self._ms_to_buffer_items(ms)
         if num_items > len(self._time):
             raise LookupError(f"Lookback duration of {ms} out of range")
-        signal = np.array([item for item in islice(self._time, 0, num_items)])
-        freqs = np.array([item for item in islice(self._frequency, 0, num_items)])
+        items = list(islice(zip(self._time, self._frequency), 0, num_items))
+        signal = np.array([t for t, f in items])
+        freqs = np.array([f for t, f in items])
         return signal, freqs
 
     def _ms_to_buffer_items(self, ms) -> int:

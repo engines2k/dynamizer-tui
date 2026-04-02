@@ -185,32 +185,6 @@
 					}
 				]
 			}
-		},
-		{
-			"name": "flux transition 2",
-			"feature": "flux",
-			"channel": 2,
-			"length": 200,
-			"settings": {
-				"adjust": 0,
-				"multiplier": 5,
-				"color": [0, 255, 0],
-				"speed": 5,
-				"modulations": [
-					{
-						"mod": "intensity",
-						"feature": "volume",
-						"condition": {
-							"threshold": 0.7,
-							"easing": "step",
-							"sharp": true,
-							"floor": 0,
-							"ceiling": 1,
-							"channel": 2
-						}
-					}
-				]
-			}
 		}
 	],
 	"controllers": [
@@ -269,9 +243,9 @@
 					"buffers": [
 						{ "channel": 0, "offset": 0, "type": "preset", "effect": "snare signal 2" },
 						{ "channel": 0, "offset": 0, "type": "preset", "effect": "snare beat 2" },
-						{ "channel": 2, "offset": 0, "type": "preset", "effect": "kick signal 2" },
-						{ "channel": 2, "offset": 0, "type": "preset", "effect": "kick beat 2" },
-						{ "channel": 2, "offset": 0, "type": "preset", "effect": "flux transition 2" }
+						{ "channel": 2, "offset": 26, "type": "preset", "effect": "kick signal 2" },
+						{ "channel": 2, "offset": 26, "type": "preset", "effect": "kick beat 2" },
+						{ "channel": 2, "offset": 0, "type": "preset", "effect": "flux transition" }
 					]
 				},
 				{
@@ -281,7 +255,7 @@
 						{ "channel": 2, "offset": 0, "type": "preset", "effect": "kick beat 2" },
 						{ "channel": 1, "offset": 26, "type": "preset", "effect": "snare signal 2" },
 						{ "channel": 1, "offset": 26, "type": "preset", "effect": "snare beat 2" },
-						{ "channel": 2, "offset": 0, "type": "preset", "effect": "flux transition 2" }
+						{ "channel": 2, "offset": 0, "type": "preset", "effect": "flux transition" }
 					]
 				}
 			]
