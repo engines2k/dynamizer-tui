@@ -1,6 +1,31 @@
 from collections import deque
+from dataclasses import dataclass
+from typing import List, Dict
 
 from channelmanager import Channel
+
+
+@dataclass
+class IntensityModulation:
+    feature: str
+    threshold: float
+    easing: str
+    sharp: bool = False
+    floor: float = 0.0
+    ceiling: float = 1.0
+    channel: Channel = Channel.MID
+
+
+@dataclass
+class ColorModulation:
+    feature: str
+    channel: Channel = Channel.MID
+
+
+@dataclass
+class SpeedModulation:
+    feature: str
+    channel: Channel = Channel.MID
 
 class LightEffectBuffer:
     def __init__(self, name: str, feature: str, length: int, settings: dict, channel: Channel = Channel.LEFT):
@@ -11,6 +36,37 @@ class LightEffectBuffer:
         self.settings = settings
         self.frame = LightBufferFrame()
         self._channel = channel
+        self.modulations = self._parse_modulations(settings.get('modulations', []))
+
+    def _parse_modulations(self, mod_list: List[dict]) -> List[IntensityModulation]:
+        result = []
+        for mod in mod_list:
+            mod_type = mod.get('mod')
+            if mod_type == 'intensity':
+                condition = mod.get('condition', {})
+                result.append(IntensityModulation(
+                    feature=mod['feature'],
+                    threshold=condition.get('threshold', 0.5),
+                    easing=condition.get('easing', 'step'),
+                    sharp=condition.get('sharp', False),
+                    floor=condition.get('floor', 0.0),
+                    ceiling=condition.get('ceiling', 1.0),
+                    channel=Channel(condition.get('channel', Channel.MID))
+                ))
+        return result
+
+    def _apply_modulation(self, mod: IntensityModulation, mod_value: float) -> float:
+        if mod.easing == 'step':
+            if mod.sharp:
+                return mod.floor if mod_value < mod.threshold else mod.ceiling
+            else:
+                t = min(max((mod_value - (mod.threshold - 0.5)) / 0.5, 0.0), 1.0)
+                return mod.floor + t * (mod.ceiling - mod.floor)
+        elif mod.easing == 'linear':
+            t = min(max((mod_value - (mod.threshold - 0.5)) / 0.5, 0.0), 1.0)
+            return mod.floor + t * (mod.ceiling - mod.floor)
+        else:
+            return 1.0
 
     @property
     def channel(self) -> Channel:
@@ -31,7 +87,16 @@ class LightEffectBuffer:
         self.length = n_frames
         self.buffer = deque(maxlen=self.length)
 
-    def handle_signal(self, feature_value: float):
+    def handle_signal(self, features: Dict[Channel, Dict[str, float]], channel: Channel):
+        channel_features = features.get(channel, features.get(Channel.MID, {}))
+        feature_value = channel_features.get(self.feature, 0.0)
+
+        for mod in self.modulations:
+            mod_features = features.get(mod.channel, features.get(Channel.MID, {}))
+            mod_value = mod_features.get(mod.feature, 0.0)
+            if isinstance(mod, IntensityModulation):
+                feature_value *= self._apply_modulation(mod, mod_value)
+
         intensity = self.calc_intensity(feature_value)
         blended_intensities = self._blend_signal(intensity)
         self.buffer.extendleft(blended_intensities)

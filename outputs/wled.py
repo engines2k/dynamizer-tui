@@ -123,12 +123,11 @@ class WLEDController():
 
         for device in self.devices:
             for buffer in device.buffers:
-                channel_features = features[buffer.channel]
-                if buffer.effect.feature not in channel_features:
+                available_features = features.get(buffer.channel, features.get(Channel.MID, {}))
+                if buffer.effect.feature not in available_features:
                     print(f"ERROR: Feature '{buffer.effect.feature}' not found in channel {buffer.channel}")
-                    raise KeyError(f"Feature '{buffer.effect.feature}' not found in channel {buffer.channel}. Available features: {list(channel_features.keys())}")
-                feature_value = channel_features[buffer.effect.feature] * self.multiplier
-                buffer.effect.handle_signal(feature_value)
+                    raise KeyError(f"Feature '{buffer.effect.feature}' not found in channel {buffer.channel}. Available features: {list(available_features.keys())}")
+                buffer.effect.handle_signal(features, buffer.channel)
 
         for device in self.devices:
             payload += bytes(device.build_payload())

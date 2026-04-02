@@ -10,7 +10,7 @@ class VolumeAnalyzer(AbstractAnalyzer):
     def __init__(self, lookbacks: Dict[Channel, Lookback], label: str = '') -> None:
         self._lookbacks = lookbacks
         self._label = label
-        self._dynamic_ceil = AdaptiveThreshold(decay=.01, start=15, floor=15)
+        self._dynamic_ceil = AdaptiveThreshold(decay=.01, start=20, floor=20)
         self._smoother = SignalFollower(attack=30, decay=4)
 
     def analyze(self, bins: np.ndarray, freqs: Dict[Channel, np.ndarray]) -> Dict[Channel, Dict[str, float]]:

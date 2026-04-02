@@ -66,9 +66,9 @@ class LightDevice():
     def set_n_leds(self, n_leds):
         self.led_count = n_leds
 
-    def handle_signal(self, features):
+    def handle_signal(self, features, channel=None):
         for buffer in self.buffers:
-            buffer.effect.handle_signal(features)
+            buffer.effect.handle_signal(features, buffer.channel)
 
 
     def build_payload(self):

@@ -52,8 +52,8 @@ class FeatureEngine():
 
     def _init_outputs(self):
         self.outputs: Dict[str, AbstractVisualizer] = {
-            #"wled": WLEDClient(self.audio_connector.n_channels),
-            "terminalwave": AmplitudeVisualizer('volume', channel=Channel.MID)
+            "wled": WLEDClient(self.audio_connector.n_channels),
+            #"terminalwave": AmplitudeVisualizer('volume', channel=Channel.MID)
         }
 
     def add_output(self, label: str, output: AbstractVisualizer) -> None:

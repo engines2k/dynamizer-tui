@@ -19,7 +19,7 @@
 			"length": 98,
 			"settings": {
 				"adjust": -1000,
-				"multiplier": 0.5,
+				"multiplier": 0.7,
 				"color": [1, 200, 78],
 				"speed": 8
 			}
@@ -91,9 +91,23 @@
 			"length": 26,
 			"settings": {
 				"adjust": -1000,
-				"multiplier": 0.5,
+				"multiplier": 0.7,
 				"color": [1, 200, 78],
-				"speed": 6
+				"speed": 6,
+				"modulations": [
+					{
+						"mod": "intensity",
+						"feature": "volume",
+						"condition": {
+							"threshold": 0.7,
+							"easing": "step",
+							"sharp": true,
+							"floor": 0,
+							"ceiling": 1,
+							"channel": 2
+						}
+					}
+				]
 			}
 		},
 		{
@@ -105,7 +119,21 @@
 				"adjust": 0,
 				"multiplier": 55,
 				"color": [255, 25, 0],
-				"speed": 6
+				"speed": 6,
+				"modulations": [
+					{
+						"mod": "intensity",
+						"feature": "volume",
+						"condition": {
+							"threshold": 0.7,
+							"easing": "step",
+							"sharp": true,
+							"floor": 0,
+							"ceiling": 1,
+							"channel": 2
+						}
+					}
+				]
 			}
 		},
 		{
@@ -116,7 +144,21 @@
 				"adjust": 100,
 				"multiplier": 2,
 				"color": [30, 25, 25],
-				"speed": 5
+				"speed": 5,
+				"modulations": [
+					{
+						"mod": "intensity",
+						"feature": "volume",
+						"condition": {
+							"threshold": 0.7,
+							"easing": "step",
+							"sharp": true,
+							"floor": 0,
+							"ceiling": 1,
+							"channel": 2
+						}
+					}
+				]
 			}
 		},
 		{
@@ -127,7 +169,47 @@
 				"adjust": 0,
 				"multiplier": 20,
 				"color": [20, 0, 1],
-				"speed": 2
+				"speed": 2,
+				"modulations": [
+					{
+						"mod": "intensity",
+						"feature": "volume",
+						"condition": {
+							"threshold": 0.7,
+							"easing": "step",
+							"sharp": true,
+							"floor": 0,
+							"ceiling": 1,
+							"channel": 2
+						}
+					}
+				]
+			}
+		},
+		{
+			"name": "flux transition 2",
+			"feature": "flux",
+			"channel": 2,
+			"length": 200,
+			"settings": {
+				"adjust": 0,
+				"multiplier": 5,
+				"color": [0, 255, 0],
+				"speed": 5,
+				"modulations": [
+					{
+						"mod": "intensity",
+						"feature": "volume",
+						"condition": {
+							"threshold": 0.7,
+							"easing": "step",
+							"sharp": true,
+							"floor": 0,
+							"ceiling": 1,
+							"channel": 2
+						}
+					}
+				]
 			}
 		}
 	],
@@ -189,7 +271,7 @@
 						{ "channel": 0, "offset": 0, "type": "preset", "effect": "snare beat 2" },
 						{ "channel": 2, "offset": 0, "type": "preset", "effect": "kick signal 2" },
 						{ "channel": 2, "offset": 0, "type": "preset", "effect": "kick beat 2" },
-						{ "channel": 2, "offset": 0, "type": "preset", "effect": "flux transition" }
+						{ "channel": 2, "offset": 0, "type": "preset", "effect": "flux transition 2" }
 					]
 				},
 				{
@@ -199,7 +281,7 @@
 						{ "channel": 2, "offset": 0, "type": "preset", "effect": "kick beat 2" },
 						{ "channel": 1, "offset": 26, "type": "preset", "effect": "snare signal 2" },
 						{ "channel": 1, "offset": 26, "type": "preset", "effect": "snare beat 2" },
-						{ "channel": 2, "offset": 0, "type": "preset", "effect": "flux transition" }
+						{ "channel": 2, "offset": 0, "type": "preset", "effect": "flux transition 2" }
 					]
 				}
 			]
