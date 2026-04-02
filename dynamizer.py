@@ -1,11 +1,11 @@
 from textual.app import App
-from audioengine import masteranalyzer, AudioEngine
+from featureengine import FeatureEngine, featureengine
 from tui.screens import CORE, WLED
 
 
 class DynamizerApp(App):
     """An app for realtime music visualization."""
-    analyzer: AudioEngine = masteranalyzer
+    analyzer: FeatureEngine = featureengine
 
     BINDINGS = [
         ('ctrl+z', 'core_screen', 'CORE'),

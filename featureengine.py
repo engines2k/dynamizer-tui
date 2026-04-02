@@ -3,7 +3,6 @@ import time
 
 from audioconnectors import AudioConnectorFactory
 from analyzers import AbstractAnalyzer, BeatHarmonyAnalyzer, FluxAnalyzer
-import channelmanager
 from outputs import AbstractVisualizer, WLEDClient, AmplitudeVisualizer
 from channelmanager import ChannelManager, Channel
 from scipy.signal import ZoomFFT
@@ -11,7 +10,7 @@ from typing import Dict, List, Callable, Tuple
 from weightings import a_weighting
 
 
-class AudioEngine():
+class FeatureEngine():
     max_failures = 3
     window_size = 4096
     hop_size = 64
@@ -232,6 +231,6 @@ class AudioEngine():
         status = "PAUSED" if self._pause_processing else "RESUMED"
         print(f"\nProcessing {status}")
 
-masteranalyzer = AudioEngine()
+featureengine = FeatureEngine()
 
 
