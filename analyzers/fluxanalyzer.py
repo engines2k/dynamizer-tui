@@ -12,7 +12,7 @@ class FluxAnalyzer(AbstractAnalyzer):
     def __init__(self, lookbacks: Dict[Channel, Lookback], label: str):
         self._lookbacks = lookbacks
         self._label = label
-        self._threshold = AdaptiveThreshold(start=3000, decay_rate=13, raise_factor=200, raise_type='FLAT', debouce_ms=1000)
+        self._threshold = AdaptiveThreshold(start=3000, decay=13, raise_factor=200, raise_type='FLAT', debouce_ms=1000)
         self._follower = SignalFollower(attack=1000, decay=5)
 
     def analyze(self, bins: np.ndarray, freqs: Dict[Channel, np.ndarray]) -> Dict[Channel, Dict[str, float]]:

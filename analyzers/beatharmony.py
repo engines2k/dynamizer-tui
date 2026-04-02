@@ -19,7 +19,7 @@ class BeatHarmonyAnalyzer(AbstractAnalyzer):
 
         self.channel = channel
         self._label = label
-        self._transient_threshold = AdaptiveThreshold(decay_rate=500, raise_factor=.4)
+        self._transient_threshold = AdaptiveThreshold(decay=500, raise_factor=.4)
         self._min_freq = min_freq
         self._max_freq = max_freq
         self._floor = floor

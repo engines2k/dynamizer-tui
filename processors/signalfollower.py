@@ -1,16 +1,14 @@
 import time
-
 from typing import Optional
-
 
 class SignalFollower():
 
-    def __init__(self, attack, decay, floor=0, ceil=None) -> None:
-        self._attack: int = attack
-        self._decay: int = decay
-        self._value: int = 0
-        self._floor: int = floor
-        self._ceil: Optional[int] = ceil
+    def __init__(self, attack: int, decay: float, floor: int=0, ceil: Optional[int]=None) -> None:
+        self._attack = attack
+        self._decay = decay
+        self._value = 0
+        self._floor = floor
+        self._ceil = ceil
         self._decay_timer: float = time.time() * 1000
 
     def track(self, signal):

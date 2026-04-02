@@ -2,15 +2,22 @@ import time
 
 class AdaptiveThreshold():
 
-    def __init__(self, decay_rate, start=0, floor=0, raise_factor=1.0, raise_type='MULT', debouce_ms=15):
-        self._decay_rate: int = decay_rate / 1000 # convert to seconds
-        self._raise_factor: float = raise_factor
+    def __init__(self,
+                 decay: float,
+                 start: int=0,
+                 floor: int=0,
+                 raise_factor: float=1.0,
+                 raise_type: str='MULT',
+                 debouce_ms:int=15):
+
+        self._decay_rate = decay / 1000 # convert to seconds
+        self._raise_factor = raise_factor
         if raise_type not in {'MULT', 'FLAT'}:
             raise ValueError(f'Invalid value "{raise_type} for raise_type, should be FLAT or MULT')
-        self._raise_type: str = raise_type
-        self._floor: int = floor
-        self._debounce_timer: float = 0
-        self._debounce_period_ms: int = debouce_ms
+        self._raise_type = raise_type
+        self._floor = floor
+        self._debounce_timer = 0
+        self._debounce_period_ms = debouce_ms
         self._threshold = start
         self._last_time = time.time() * 1000
 

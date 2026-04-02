@@ -9,7 +9,7 @@ class AbstractAnalyzer(ABC):
     feature_type: str
 
     @abstractmethod
-    def __init__(self, lookbacks: Dict[Channel, Lookback], label):
+    def __init__(self, lookbacks: Dict[Channel, Lookback], label) -> None:
         pass
 
     @abstractmethod
