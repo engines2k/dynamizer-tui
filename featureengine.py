@@ -13,7 +13,7 @@ from weightings import a_weighting
 
 class FeatureEngine():
     max_failures = 3
-    window_size = 4096
+    window_size = 2048
     hop_size = 64
     lookback_duration_ms = 100
     min_callback_interval_ms = 33
