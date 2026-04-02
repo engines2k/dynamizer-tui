@@ -20,7 +20,7 @@ class CoreOptions(VerticalGroup):
 
     def compose(self) -> ComposeResult:
         #disabled for better perf on laptop
-        yield Visualizers()
+        #yield Visualizers()
         yield CoreOptionsControls(self)
         yield Static("", id='status')
 

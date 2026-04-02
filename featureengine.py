@@ -15,7 +15,7 @@ class FeatureEngine():
     window_size = 4096
     hop_size = 64
     lookback_duration_ms = 100
-    min_callback_interval_ms = 20#33
+    min_callback_interval_ms = 33
     _active = False
 
     def __init__(self):
