@@ -16,7 +16,7 @@ class FeatureEngine():
     window_size = 2048
     hop_size = 64
     lookback_duration_ms = 100
-    min_callback_interval_ms = 33
+    min_callback_interval_ms = 25
     _active = False
 
     def __init__(self):
@@ -81,6 +81,7 @@ class FeatureEngine():
                 label='snare',
                 min_freq=2000,
                 max_freq=6000,
+                mult=1.3,
                 floor=400,
                 beat_attack=200,
                 beat_decay=15,
@@ -91,6 +92,7 @@ class FeatureEngine():
                 label='snare',
                 min_freq=2000,
                 max_freq=6000,
+                mult=1.3,
                 floor=400,
                 beat_attack=200,
                 beat_decay=15,

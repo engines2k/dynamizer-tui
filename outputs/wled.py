@@ -11,6 +11,7 @@ from .light_buffer import LightEffectBuffer
 from .light_device import LightDevice, DeviceBuffer
 
 OUTPUT_DELAY_MS = 0#220
+PROTOCOL_ID = 2
 LISTEN_TIMEOUT_SECONDS = 2
 
 class WLEDClient(AbstractVisualizer):
@@ -119,6 +120,7 @@ class WLEDController():
 
     def build_payload(self, features: Dict[Channel, Dict[str, float]]):
         payload = bytearray()
+        payload.append(PROTOCOL_ID)
         payload.append(LISTEN_TIMEOUT_SECONDS)
 
         for device in self.devices:
