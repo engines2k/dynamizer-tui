@@ -1,8 +1,13 @@
+import os
 import pyaudiowpatch as pyaudio
 import numpy as np
 import threading
 from typing import Dict, List, Callable, Optional
+from dotenv import load_dotenv
 from .abstractconnector import AbstractConnector
+
+# Load environment variables (mirrors JACKConnector behavior)
+load_dotenv()
 
 
 class PAConnector(AbstractConnector):
@@ -25,6 +30,30 @@ class PAConnector(AbstractConnector):
         self._current_input_name: Optional[str] = None
         self._subscribers: List[Callable] = []
         self._audio_devices = self._find_audio_devices()
+        # Apply optional environment defaults for sample rate and buffer size
+        try:
+            env_buf = os.getenv('DEFAULT_BUFFER_SIZE')
+            if env_buf:
+                self._buffer_size = int(env_buf)
+        except Exception:
+            pass
+
+        try:
+            env_rate = os.getenv('DEFAULT_SAMPLE_RATE')
+            if env_rate:
+                self._sample_rate = int(env_rate)
+        except Exception:
+            pass
+
+        # If a DEFAULT_INPUT is provided, try to select it now (must match pretty name)
+        default_input = os.getenv('DEFAULT_INPUT')
+        if default_input:
+            try:
+                # Use switch_input to validate and set internal state
+                self.switch_input(default_input)
+            except Exception:
+                # Fall through silently; user can call switch_input manually
+                print(f"WARNING: DEFAULT_INPUT '{default_input}' not found among audio devices")
     
     def subscribe(self, callback: Callable) -> None:
         if callback not in self._subscribers:
