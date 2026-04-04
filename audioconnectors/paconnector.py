@@ -1,6 +1,6 @@
-import pyaudio
+import pyaudiowpatch as pyaudio
 import numpy as np
-import threading
+from os import environ
 from typing import Dict, List, Callable, Optional
 from dotenv import load_dotenv
 from .abstractconnector import AbstractConnector
@@ -10,7 +10,6 @@ load_dotenv()
 
 
 class PAConnector(AbstractConnector):
-
     def __init__(self, process_callback: Callable):
         super().__init__()
 
@@ -19,15 +18,13 @@ class PAConnector(AbstractConnector):
         self.input_is_aux: bool = False
 
         self._sample_rate: int = 44100
-        self._buffer_size: int = 1024
+        self._buffer_size: int = 256
         self._process_callback = process_callback
         self._pyaudio: pyaudio.PyAudio = pyaudio.PyAudio()
         self._stream: Optional[pyaudio.Stream] = None
-        self._lock = threading.Lock()
 
         self._buffer_left: Optional[np.ndarray] = None
         self._buffer_right: Optional[np.ndarray] = None
-        self._aux_boost: float = 0.15
 
         self._active_input: Optional[int] = None
         self._current_input_name: Optional[str] = None
@@ -56,7 +53,6 @@ class PAConnector(AbstractConnector):
         self._active_input = self._audio_devices[input]
         self._current_input_name = input
         self.input_is_aux = False
-        self._apply_aux_boost()
 
         if was_active:
             self._connect_input()
@@ -72,6 +68,9 @@ class PAConnector(AbstractConnector):
                 raise RuntimeError("No audio input devices available")
             first_device_name = next(iter(self._audio_devices))
             self._active_input = self._audio_devices[first_device_name]
+            if environ.get("DEFAULT_INPUT") and environ["DEFAULT_INPUT"] in self._audio_devices:
+                self._active_input = self._audio_devices[environ["DEFAULT_INPUT"]]
+                self._current_input_name = environ["DEFAULT_INPUT"]
             self._current_input_name = first_device_name
 
         self._connect_input()
@@ -87,7 +86,7 @@ class PAConnector(AbstractConnector):
 
         try:
             dev_info = self._pyaudio.get_device_info_by_index(self._active_input)
-            channels = min(int(dev_info['maxInputChannels']), 2)
+            channels = min(int(dev_info["maxInputChannels"]), 2)
             self.n_channels = channels
 
             supported_rate = self._find_supported_sample_rate(
@@ -95,7 +94,9 @@ class PAConnector(AbstractConnector):
             )
 
             self._buffer_left = np.zeros(self._buffer_size, dtype=np.float32)
-            self._buffer_right = np.zeros(self._buffer_size, dtype=np.float32) if channels == 2 else None
+            self._buffer_right = (
+                np.zeros(self._buffer_size, dtype=np.float32) if channels == 2 else None
+            )
 
             self._stream = self._pyaudio.open(
                 format=pyaudio.paFloat32,
@@ -104,7 +105,7 @@ class PAConnector(AbstractConnector):
                 input=True,
                 input_device_index=self._active_input,
                 frames_per_buffer=self._buffer_size,
-                stream_callback=self._audio_callback
+                stream_callback=self._audio_callback,
             )
             self._stream.start_stream()
 
@@ -114,7 +115,7 @@ class PAConnector(AbstractConnector):
     def _find_supported_sample_rate(
         self, device_index: int, channels: int, dev_info: dict
     ) -> int:
-        device_default = int(dev_info.get('defaultSampleRate', self._sample_rate))
+        device_default = int(dev_info.get("defaultSampleRate", self._sample_rate))
         candidate_rates = [device_default, self._sample_rate, 48000, 44100, 32000]
 
         for rate in candidate_rates:
@@ -142,6 +143,9 @@ class PAConnector(AbstractConnector):
     def _audio_callback(self, in_data, frame_count, time_info, status):
         audio_data = np.frombuffer(in_data, dtype=np.float32)
 
+        if self._buffer_left is None:
+            return (None, pyaudio.paContinue)
+
         if self._buffer_right is not None:
             self._buffer_left[:] = audio_data[::2]
             self._buffer_right[:] = audio_data[1::2]
@@ -156,15 +160,21 @@ class PAConnector(AbstractConnector):
             callback()
 
     def get_buffers(self) -> List[np.ndarray]:
+        buffers = []
+        if self._buffer_left is not None:
+            buffers.append(self._buffer_left)
         if self._buffer_right is not None:
-            return [self._buffer_left, self._buffer_right]
-        return [self._buffer_left]
+            buffers.append(self._buffer_right)
+        if self.input_is_aux:
+            SCALAR_AUX_BOOST = 0.15
+            buffers = [np.multiply(SCALAR_AUX_BOOST, b) for b in buffers]
+        return buffers
 
     def _find_audio_devices(self) -> None:
         wasapi_index = None
         for i in range(self._pyaudio.get_host_api_count()):
             api_info = self._pyaudio.get_host_api_info_by_index(i)
-            if api_info['type'] == pyaudio.paWASAPI:
+            if api_info["type"] == pyaudio.paWASAPI:
                 wasapi_index = i
                 break
 
@@ -173,48 +183,42 @@ class PAConnector(AbstractConnector):
             if not self._is_device_usable(dev, wasapi_index):
                 continue
 
-            name = dev['name']
-            is_loopback = dev.get('isLoopbackDevice', False)
+            name = dev["name"]
+            is_loopback = dev.get("isLoopbackDevice", False)
 
             if is_loopback:
                 self._audio_devices[f"{name} (Loopback)"] = i
-            elif dev['maxInputChannels'] > 0 and dev['hostApi'] == wasapi_index:
-                if 'loopback' in name.lower() or 'stereo mix' in name.lower():
+            elif dev["maxInputChannels"] > 0 and dev["hostApi"] == wasapi_index:
+                if "loopback" in name.lower() or "stereo mix" in name.lower():
                     self._audio_devices[f"{name} (WASAPI Loopback)"] = i
-            elif dev['maxInputChannels'] > 0 and not is_loopback:
+            elif dev["maxInputChannels"] > 0 and not is_loopback:
                 if name not in self._audio_devices:
-                    api_info = self._pyaudio.get_host_api_info_by_index(dev['hostApi'])
-                    if api_info['name'] != 'MME':
+                    api_info = self._pyaudio.get_host_api_info_by_index(dev["hostApi"])
+                    if api_info["name"] != "MME":
                         name = f"{name} ({api_info['name']})"
                     self._audio_devices[name] = i
 
     def _is_device_usable(self, dev: dict, wasapi_index: Optional[int]) -> bool:
-        if not dev.get('name') or not dev['name'].strip():
+        if not dev.get("name") or not dev["name"].strip():
             return False
-        if dev.get('defaultSampleRate', 0) <= 0:
+        if dev.get("defaultSampleRate", 0) <= 0:
             return False
 
-        name_lower = dev['name'].lower()
-        excluded = ['microsoft sound mapper', 'primary sound', 'communications device']
+        name_lower = dev["name"].lower()
+        excluded = ["microsoft sound mapper", "primary sound", "communications device"]
         if any(ex in name_lower for ex in excluded):
             return False
 
-        if dev.get('isLoopbackDevice', False):
+        if dev.get("isLoopbackDevice", False):
             return True
 
-        if dev['hostApi'] == wasapi_index and dev['maxInputChannels'] > 0:
+        if dev["hostApi"] == wasapi_index and dev["maxInputChannels"] > 0:
             return True
 
-        if dev['maxInputChannels'] > 0:
+        if dev["maxInputChannels"] > 0:
             return True
 
         return False
-
-    def _apply_aux_boost(self) -> None:
-        if self.input_is_aux and self._buffer_left is not None:
-            self._buffer_left *= self._aux_boost
-            if self._buffer_right is not None:
-                self._buffer_right *= self._aux_boost
 
     def __del__(self):
         try:
@@ -222,7 +226,7 @@ class PAConnector(AbstractConnector):
         except Exception:
             pass
         try:
-            if hasattr(self, '_pyaudio') and self._pyaudio:
+            if hasattr(self, "_pyaudio") and self._pyaudio:
                 self._pyaudio.terminate()
         except Exception:
             pass

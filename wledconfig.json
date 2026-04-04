@@ -13,6 +13,18 @@
 			}
 		},
 		{
+			"name": "atmosphere passive",
+			"feature": "atmosphere",
+			"channel": 2,
+			"length": 161,
+			"settings": {
+				"adjust": 0,
+				"multiplier": 400,
+				"color": [10, 15, 255],
+				"speed": 1
+			}
+		},
+		{
 			"name": "kick signal 1",
 			"feature": "kick_signal",
 			"channel": 0,
@@ -221,13 +233,8 @@
 				{
 					"led_count": 161,
 					"buffers": [
-						{ "channel": 1, "offset": 0, "type": "preset", "effect": "snare signal 1 left" },
-						{ "channel": 1, "offset": 0, "type": "preset", "effect": "snare beat 1 left" },
-						{ "channel": 2, "offset": 21, "type": "preset", "effect": "kick signal 1" },
-						{ "channel": 2, "offset": 21, "type": "preset", "effect": "kick beat 1" },
-						{ "channel": 0, "offset": 123, "type": "preset", "effect": "snare signal 1 right" },
-						{ "channel": 0, "offset": 123, "type": "preset", "effect": "snare beat 1 right" },
-						{ "channel": 2, "offset": 0, "type": "preset", "effect": "flux transition" }
+						{ "channel": 2, "offset": 0, "type": "preset", "effect": "flux transition" },
+						{ "channel": 2, "offset": 0, "type": "preset", "effect": "atmosphere passive" }
 					]
 				}
 			]

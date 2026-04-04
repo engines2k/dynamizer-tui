@@ -17,7 +17,7 @@ class FeatureEngine():
     window_size = 2048
     hop_size = 64
     lookback_duration_ms = 100
-    min_callback_interval_ms = 25
+    min_callback_interval_ms = 20
     _active = False
 
     def __init__(self):
@@ -54,7 +54,7 @@ class FeatureEngine():
 
     def _init_outputs(self):
         self.outputs: Dict[str, AbstractVisualizer] = {
-            #"wled": WLEDClient(self.audio_connector.n_channels),
+            "wled": WLEDClient(self.audio_connector.n_channels),
             "terminalwave": AmplitudeVisualizer('atmosphere', channel=Channel.MID)
         }
 
