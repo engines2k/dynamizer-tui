@@ -5,6 +5,10 @@ from channelmanager import Channel
 from lookback import Lookback
 
 class AbstractAnalyzer(ABC):
+    """
+    Processes a musical signal into a number representing an
+    immediate piece of musical information, aka a feature.
+    """
     label: str
     feature_type: str
 

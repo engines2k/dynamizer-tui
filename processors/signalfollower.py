@@ -3,7 +3,7 @@ from typing import Optional
 
 class SignalFollower():
 
-    def __init__(self, attack: int, decay: float, floor: int=0, ceil: Optional[int]=None) -> None:
+    def __init__(self, attack: float, decay: float, floor: int=0, ceil: Optional[int]=None) -> None:
         self._attack = attack
         self._decay = decay
         self._value = 0
@@ -11,7 +11,7 @@ class SignalFollower():
         self._ceil = ceil
         self._decay_timer: float = time.time() * 1000
 
-    def track(self, signal):
+    def track(self, signal) -> float:
         time_now = time.time()*1000
         rate_limit = self._attack if signal > self._value else self._decay
 
