@@ -15,8 +15,8 @@ class BeatHarmonyAnalyzer(AbstractAnalyzer):
                  mult: float = 1,
                  min_freq: int = 0,
                  max_freq: int = 20000,
-                 beat_attack: Optional[int] = None,
-                 beat_decay: Optional[int] = None):
+                 beat_attack: Optional[float] = None,
+                 beat_decay: Optional[float] = None):
 
         self.channel = channel
         self._label = label
@@ -31,8 +31,8 @@ class BeatHarmonyAnalyzer(AbstractAnalyzer):
         else:
             self._signal_follower = None
 
-    def analyze(self, bins, freqs: Dict[Channel, ndarray]) -> Dict[Channel, Dict[str, float]]:
-        channel_freqs = freqs[self.channel][(bins > self._min_freq) & (bins < self._max_freq + 1)]
+    def analyze(self, bins, freq: Dict[Channel, ndarray], time: Dict[Channel, ndarray]) -> Dict[Channel, Dict[str, float]]:
+        channel_freqs = freq[self.channel][(bins > self._min_freq) & (bins < self._max_freq + 1)]
         signal = sum(channel_freqs) * self._mult
 
         self._transient_threshold.track(signal)

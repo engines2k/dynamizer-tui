@@ -21,10 +21,10 @@ class AtmosphereAnalyzer(AbstractAnalyzer):
         self._upper_hz = upper_hz
         pass
 
-    def analyze(self, bins: np.ndarray, freqs: Dict[Channel, np.ndarray]) -> Dict[Channel, Dict[str, float]]:
+    def analyze(self, bins: np.ndarray, freq: Dict[Channel, np.ndarray], time: Dict[Channel, np.ndarray]) -> Dict[Channel, Dict[str, float]]:
         # grab LSIDE and RSIDE channel signals
-        lside_signal = freqs[Channel.LSIDE][(bins >= self._lower_hz) & (bins <= self._upper_hz)]
-        rside_signal = freqs[Channel.RSIDE][(bins >= self._lower_hz) & (bins <= self._upper_hz)]
+        lside_signal = freq[Channel.LSIDE][(bins >= self._lower_hz) & (bins <= self._upper_hz)]
+        rside_signal = freq[Channel.RSIDE][(bins >= self._lower_hz) & (bins <= self._upper_hz)]
         #TODO: apply cubic ease-in-out
         lsum = np.average(lside_signal)
         rsum = np.average(rside_signal)

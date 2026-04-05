@@ -3,6 +3,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 
 from analyzers.atmosphere import AtmosphereAnalyzer
+from analyzers.buzz import BuzzAnalyzer
 from audioconnectors import AudioConnectorFactory
 from analyzers import AbstractAnalyzer, BeatHarmonyAnalyzer, FluxAnalyzer, VolumeAnalyzer
 from outputs import AbstractVisualizer, WLEDClient, AmplitudeVisualizer
@@ -54,8 +55,8 @@ class FeatureEngine():
 
     def _init_outputs(self):
         self.outputs: Dict[str, AbstractVisualizer] = {
-            "wled": WLEDClient(self.audio_connector.n_channels),
-            "terminalwave": AmplitudeVisualizer('atmosphere', channel=Channel.MID)
+            #"wled": WLEDClient(self.audio_connector.n_channels),
+            "terminalwave": AmplitudeVisualizer('buzz', channel=Channel.MID)
         }
 
     def add_output(self, label: str, output: AbstractVisualizer) -> None:
@@ -107,7 +108,10 @@ class FeatureEngine():
             ),
             AtmosphereAnalyzer(
                 lookbacks=self._channel_manager.get_lookbacks()
-            )
+            ),
+            BuzzAnalyzer(
+                lookbacks=self._channel_manager.get_lookbacks()
+            ),
         ]
 
     @property 
@@ -142,7 +146,7 @@ class FeatureEngine():
         while self._buffer_ready():
             windows, treated_freqs = self._treat_windows()
             self._channel_manager.load_results(windows, treated_freqs)
-            features = self._analyze_all_features(treated_freqs)
+            features = self._analyze_all_features(windows, treated_freqs)
             self._send_to_outputs(features)
 
 
@@ -186,10 +190,10 @@ class FeatureEngine():
         freqs = self._transform_freqs(freqs)
         return freqs
 
-    def _analyze_all_features(self, freqs: Dict[Channel, np.ndarray]) -> Dict[Channel, Dict[str, float]]:
+    def _analyze_all_features(self, time: Dict[Channel, np.ndarray], freq: Dict[Channel, np.ndarray]) -> Dict[Channel, Dict[str, float]]:
         channel_features = {}
         for analyzer in self._analyzers:
-            analyzer_features = analyzer.analyze(self._freq_bins, freqs)
+            analyzer_features = analyzer.analyze(self._freq_bins, freq, time)
             for channel, features in analyzer_features.items():
                 if channel in channel_features:
                     channel_features[channel].update(features)

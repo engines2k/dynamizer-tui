@@ -15,7 +15,7 @@ class FluxAnalyzer(AbstractAnalyzer):
         self._threshold = AdaptiveThreshold(start=3000, decay=13, raise_factor=200, raise_type='FLAT', debouce_ms=1000)
         self._follower = SignalFollower(attack=1000, decay=10)
 
-    def analyze(self, bins: np.ndarray, freqs: Dict[Channel, np.ndarray]) -> Dict[Channel, Dict[str, float]]:
+    def analyze(self, bins: np.ndarray, freq: Dict[Channel, np.ndarray], time: Dict[Channel, np.ndarray]) -> Dict[Channel, Dict[str, float]]:
         try:
             prev_freqs: Dict[Channel, np.ndarray] = { 
                 c: l.get_by_ms(self.lookback_duration)[1]
@@ -27,8 +27,8 @@ class FluxAnalyzer(AbstractAnalyzer):
                 Channel.RIGHT: { 'flux': 0.0 },
                 Channel.MID: { 'flux': 0.0 },
             }
-        flux_l = self._window_flux(bins, freqs[Channel.LEFT], prev_freqs[Channel.LEFT])
-        flux_r = self._window_flux(bins, freqs[Channel.RIGHT], prev_freqs[Channel.RIGHT])
+        flux_l = self._window_flux(bins, freq[Channel.LEFT], prev_freqs[Channel.LEFT])
+        flux_r = self._window_flux(bins, freq[Channel.RIGHT], prev_freqs[Channel.RIGHT])
         flux_m = (flux_l + flux_r) / 2 
 
         self._threshold.track(flux_m)

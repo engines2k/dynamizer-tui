@@ -4,7 +4,7 @@ from processors import AdaptiveThreshold
 class AmplitudeVisualizer(AbstractVisualizer):
 
     def __init__(self, feature_key: str, output_width=40, channel: int = 0):
-        self._threshold = AdaptiveThreshold(decay=0, raise_factor=1, raise_type='FLAT')
+        self._threshold = AdaptiveThreshold(start=300, decay=0, raise_factor=1, raise_type='FLAT')
         self._output_width = output_width
         self._key = feature_key
         self._channel = channel
@@ -15,7 +15,9 @@ class AmplitudeVisualizer(AbstractVisualizer):
 
     def send(self, features):
         channel_features = features.get(self._channel, {})
-        signal = channel_features.get(self._key, 0)
+        signal = channel_features.get(self._key, None)
+        if signal is None:
+            raise KeyError(f"key {self._key} not found for chanel {self._channel}")
         self._threshold.track(signal)
         ceiling = self._threshold.current + .00000000000001
         stars = ("*" * int((signal / ceiling) * self._output_width))
