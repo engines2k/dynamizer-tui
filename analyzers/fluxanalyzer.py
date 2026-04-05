@@ -33,7 +33,7 @@ class FluxAnalyzer(AbstractAnalyzer):
 
         self._threshold.track(flux_m)
 
-        flux_m = max(0, flux_m -  self._threshold.current)
+        flux_m = max(0, flux_m -  self._threshold.value)
         self._follower.track(flux_m)
         flux_m = self._follower.value
 

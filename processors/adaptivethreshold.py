@@ -35,7 +35,7 @@ class AdaptiveThreshold():
         return self._debounce_timer > time.time()*1000
 
     @property
-    def current(self):
+    def value(self):
         self._decay_threshold()
         return self._threshold
 

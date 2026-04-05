@@ -3,7 +3,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 
 from analyzers.atmosphere import AtmosphereAnalyzer
-from analyzers.buzz import BuzzAnalyzer
+from analyzers.grit import GritAnalyzer
 from audioconnectors import AudioConnectorFactory
 from analyzers import AbstractAnalyzer, BeatHarmonyAnalyzer, FluxAnalyzer, VolumeAnalyzer
 from outputs import AbstractVisualizer, WLEDClient, AmplitudeVisualizer
@@ -55,7 +55,7 @@ class FeatureEngine():
 
     def _init_outputs(self):
         self.outputs: Dict[str, AbstractVisualizer] = {
-            #"wled": WLEDClient(self.audio_connector.n_channels),
+            "wled": WLEDClient(self.audio_connector.n_channels),
             "terminalwave": AmplitudeVisualizer('buzz', channel=Channel.MID)
         }
 
@@ -109,7 +109,7 @@ class FeatureEngine():
             AtmosphereAnalyzer(
                 lookbacks=self._channel_manager.get_lookbacks()
             ),
-            BuzzAnalyzer(
+            GritAnalyzer(
                 lookbacks=self._channel_manager.get_lookbacks()
             ),
         ]

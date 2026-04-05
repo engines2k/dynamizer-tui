@@ -18,8 +18,8 @@
 			"channel": 2,
 			"length": 161,
 			"settings": {
-				"adjust": 0,
-				"multiplier": 400,
+				"adjust": 1,
+				"multiplier": 374,
 				"color": [10, 15, 255],
 				"speed": 1
 			}

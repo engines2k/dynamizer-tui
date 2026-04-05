@@ -19,7 +19,7 @@ class VolumeAnalyzer(AbstractAnalyzer):
         vol = np.average(freq[Channel.LEFT])
         smoothed_vol = self._smoother.track(vol)
         self._dynamic_ceil.track(smoothed_vol)
-        ceil = self._dynamic_ceil.current
+        ceil = self._dynamic_ceil.value
         return {
             Channel.MID: { 'volume': smoothed_vol / ceil }
         }

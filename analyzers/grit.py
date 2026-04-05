@@ -7,7 +7,7 @@ from lookback import Lookback
 from sys import float_info
 from processors import SignalFollower
 
-class GritAnalyzer(AbstractAnalyzer):
+class BuzzAnalyzer(AbstractAnalyzer):
     """
     buzz: Measures harmonic content in the bass register.
     Finds the 2 loudest fundamentals below 400Hz and computes

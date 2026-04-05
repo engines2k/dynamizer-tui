@@ -36,7 +36,7 @@ class BeatHarmonyAnalyzer(AbstractAnalyzer):
         signal = sum(channel_freqs) * self._mult
 
         self._transient_threshold.track(signal)
-        threshold = int(self._transient_threshold.current)
+        threshold = int(self._transient_threshold.value)
 
         signal_beat = int(max(signal - threshold, 0))
         signal_beat = signal_beat if signal > self._floor else 0
