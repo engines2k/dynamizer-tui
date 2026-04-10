@@ -13,6 +13,18 @@
 			}
 		},
 		{
+			"name": "grit passive",
+			"feature": "grit",
+			"channel": 2,
+			"length": 10,
+			"settings": {
+				"adjust": 1,
+				"multiplier": 500,
+				"color": [255, 0, 0],
+				"speed": 1
+			}
+		},
+		{
 			"name": "atmosphere passive",
 			"feature": "atmosphere",
 			"channel": 2,
@@ -20,7 +32,7 @@
 			"settings": {
 				"adjust": 1,
 				"multiplier": 374,
-				"color": [10, 15, 255],
+				"color": [10, 5, 125],
 				"speed": 1
 			}
 		},
@@ -234,7 +246,13 @@
 					"led_count": 161,
 					"buffers": [
 						{ "channel": 2, "offset": 0, "type": "preset", "effect": "flux transition" },
-						{ "channel": 2, "offset": 0, "type": "preset", "effect": "atmosphere passive" }
+						{ "channel": 2, "offset": 0, "type": "preset", "effect": "atmosphere passive" },
+						{ "channel": 2, "offset": 0, "type": "preset", "effect": "grit passive" },
+						{ "channel": 2, "offset": 30, "type": "preset", "effect": "grit passive" },
+						{ "channel": 2, "offset": 60, "type": "preset", "effect": "grit passive" },
+						{ "channel": 2, "offset": 90, "type": "preset", "effect": "grit passive" },
+						{ "channel": 2, "offset": 120, "type": "preset", "effect": "grit passive" },
+						{ "channel": 2, "offset": 150, "type": "preset", "effect": "grit passive" }
 					]
 				}
 			]

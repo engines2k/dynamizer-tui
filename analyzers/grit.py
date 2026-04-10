@@ -7,9 +7,9 @@ from lookback import Lookback
 from sys import float_info
 from processors import SignalFollower
 
-class BuzzAnalyzer(AbstractAnalyzer):
+class GritAnalyzer(AbstractAnalyzer):
     """
-    buzz: Measures harmonic content in the bass register.
+    grit: Measures harmonic content in the bass register.
     Finds the 2 loudest fundamentals below 400Hz and computes
     the ratio of harmonic energy (2nd-7th harmonics) to fundamental energy.
     """
@@ -43,13 +43,13 @@ class BuzzAnalyzer(AbstractAnalyzer):
                 harmonic_sum += min(linear_freq[harmonic_idx], (fund_amp / h))
 
         avg_amp = np.mean(linear_freq)
-        buzz = (harmonic_sum / (np.sum(fundamental_amps) + eps)) * avg_amp
-        smoothed = self._follower.track(buzz) / self._ceiling.value
+        grit = (harmonic_sum / (np.sum(fundamental_amps) + eps)) * avg_amp
+        smoothed = self._follower.track(grit) / self._ceiling.value
         self._ceiling.track(smoothed)
         eased = ease_in_out_cubic(smoothed)
         
 
-        return { Channel.MID: {'buzz': float(eased) } }
+        return { Channel.MID: {'grit': float(eased) } }
 
 def ease_in_out_cubic(x: float) -> float:
     if x < .5:
